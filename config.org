@@ -334,22 +334,19 @@ Pretty Info colors
 #+end_src
 
 ** Themes
+We will load all the themes
 #+begin_src emacs-lisp
-(use-package dracula-theme)
-
 (use-package base16-theme)
 
-(use-package kaolin-themes
-  :after all-the-icons)
+(use-package leuven-theme)
 
-(use-package doom-themes
-  :after all-the-icons
-  :custom
-  (doom-themes-enable-bold t)
-  (doom-themes-enable-italic t)
+(use-package vivid-theme
+  :straight (:host github :repo "websymphony/vivid-theme"))
+
+(use-package dracula-theme
+  :after doom-themes kaolin-themes
   :config
-  (doom-themes-visual-bell-config)
-  (doom-themes-treemacs-config))
+  (load-theme 'dracula t))
 #+end_src
 
 ** Mode Line
