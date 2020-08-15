@@ -4,6 +4,7 @@
 * The Bestest =.emacs.d=
 
   Inspired by Spacemacs and Doom Emacs. Most of the "aesthetic" parts of those distributions are available as plugins, so gluing together your own configuration isn't too hard.
+
   Featuring:
 
   - [[https://github.com/raxod502/straight.el][straight.el]]
@@ -547,7 +548,9 @@ We will load all the themes
     "es" '(org-babel-execute-src-block :wk "execute block")
     "eb" '(org-babel-execute-buffer :wk "execute buffer")
     "et" '(org-babel-execute-subtree :wk "execute subtree")
-    "'"  '(org-edit-special :wk "edit block"))
+    "'"  '(org-edit-special :wk "edit block")
+    "tt" 'counsel-org-tag
+    "tv" 'org-change-tag-in-region)
   (:keymaps 'org-src-mode
             :definer 'minor-mode
             :states 'normal
