@@ -289,7 +289,6 @@ Pretty Info colors
 ** Treemacs
 #+begin_src emacs-lisp
 (use-package treemacs
-  :after all-the-icons
   :general
   (leader-def
     "tt" 'treemacs
@@ -298,9 +297,6 @@ Pretty Info colors
   :after treemacs evil)
 (use-package treemacs-projectile
   :after treemacs projectile)
-(use-package treemacs-icons-dired
-  :after treemacs dired
-  :config (treemacs-icons-dired-mode))
 (use-package treemacs-magit
   :after treemacs-magit)
 #+end_src
@@ -372,6 +368,12 @@ Pretty Info colors
 ** All The Icons
 #+begin_src emacs-lisp
 (use-package all-the-icons)
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode))
+(use-package treemacs-all-the-icons
+  :after treemacs
+  :config
+  (treemacs-load-theme "all-the-icons"))
 #+end_src
 
 ** Dashboard
