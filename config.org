@@ -570,7 +570,8 @@ Pretty Info colors
   (org-pretty-entities t)
   (org-fontify-quote-and-verse-blocks t)
   (org-cycle-separator-lines -1)
-  (org-ellipsis "↴")
+  (org-ellipsis "...")
+  (org-tag-column 0)
   :hook (org-mode . org-indent-mode)
   :config
   (add-to-list 'org-structure-template-alist '("se" . "src emacs-lisp"))
@@ -584,19 +585,13 @@ Pretty Info colors
   :custom
   (inhibit-compacting-font-caches t)
 
-  (org-superstar-headline-bullets-list '("" "" "" ""))
+  (org-superstar-headline-bullets-list '("⏹" "◈" "⚬" "▷"))
 
   (org-hide-leading-stars nil)
   (org-superstar-leading-bullet ?\s)
 
-  (org-superstar-todo-bullet-alist '(("TODO" . "")
-                                     ("NEXT" . "")
-                                     ("DONE" . "")))
   (org-superstar-special-todo-items t)
 
-  (org-superstar-item-bullet-alist '((?* . "")
-                                     (?+ . "\xf0g7")
-                                     (?- . "\xf068")))
   (org-superstar-prettify-item-bullets t)
   :hook
   (org-mode . me/auto-lightweight-mode)
