@@ -8,9 +8,9 @@
 (setq gc-cons-threshold most-positive-fixnum
       gc-cons-percentage 0.6)
 (add-hook 'emacs-startup-hook
-	  (lambda ()
-	    (setq gc-cons-threshold me/gc-cons-threshold
-		  gc-cons-percentage 0.1)))
+          (lambda ()
+            (setq gc-cons-threshold me/gc-cons-threshold
+                  gc-cons-percentage 0.1)))
 
 (setq emacs-load-start-time (current-time))
 
@@ -31,14 +31,15 @@
 (defvar me/-file-name-handler-alist file-name-handler-alist)
 (setq file-name-handler-alist nil)
 (add-hook 'emacs-startup-hook
-	  (lambda ()
-	    (setq file-name-handler-alist me/-file-name-handler-alist)))
+          (lambda ()
+            (setq file-name-handler-alist me/-file-name-handler-alist)))
 
 (setq inhibit-compacting-font-caches t)
 
 ;; Set up straight.el
 (setq debug-on-error t)
-(setq straight-use-package-by-default t)
+(setq straight-use-package-by-default t
+      use-package-always-demand t)
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -52,12 +53,21 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-(setq straight-check-for-modifications '(check-on-save find-when-checking))
+(require 'straight-x)
+(setq straight-check-for-modifications '(check-on-save))
 (setq vc-follow-symlinks t)
 
-(straight-use-package 'use-package)
-(use-package org)
+(defmacro use-feature (name &rest args)
+  "Like `use-package', but with `straight-use-package-by-default' disabled.
+NAME and ARGS are as in `use-package'."
+  (declare (indent defun))
+  `(use-package ,name
+     :straight nil
+     ,@args))
 
+(straight-use-package 'use-package)
+
+(use-package org)
 (org-babel-load-file (expand-file-name "config.org" user-emacs-directory))
 
 (when (require 'time-date nil t)

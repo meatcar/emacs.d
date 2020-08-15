@@ -7,3 +7,4 @@ auto-save-list/
 config.el
 early-init.el
 projectile-bookmarks.eld
+places
