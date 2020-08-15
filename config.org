@@ -474,6 +474,15 @@ Pretty Info colors
 
 #+end_src
 
+** Mixed Pitch Mode
+#+begin_src emacs-lisp
+(use-package mixed-pitch
+  :after all-the-icons
+  :custom
+  (mixed-pitch-set-height t)
+  :hook (text-mode . mixed-pitch-mode))
+#+end_src
+
 * Text Editing
 
 ** Better Defaults
