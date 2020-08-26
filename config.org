@@ -56,10 +56,10 @@
 (set-selection-coding-system 'utf-8)
 (set-file-name-coding-system 'utf-8)
 (set-clipboard-coding-system 'utf-8)
-(set-w32-system-coding-system 'utf-8)
+(if (eq system-type 'windows-nt)
+  (set-w32-system-coding-system 'utf-8))
 (set-buffer-file-coding-system 'utf-8)
 #+end_src
-
 
 * Packages
 
@@ -321,6 +321,19 @@ Pretty Info colors
 (setq-default line-spacing 1)
 
 (global-hl-line-mode t)
+** Fonts
+#+begin_src emacs-lisp
+(use-package persistent-soft)
+(use-package unicode-fonts
+  :after persistent-soft
+  :config
+  (if (eq system-type 'windows-nt)
+    (custom-set-faces
+       '(default ((t (:family "GoMono NF" :height 90))))
+       '(variable-pitch ((t (:family "Georgia" :height 110)))))
+    (custom-set-faces
+     '(default ((t (:family "Go Mono" :height 90))))
+     '(variable-pitch ((t (:family "IBM Plex Serif" :height 100)))))))
 #+end_src
 
 ** Fast Scroll
@@ -585,7 +598,7 @@ We will load all the themes
   :custom
   (inhibit-compacting-font-caches t)
 
-  (org-superstar-headline-bullets-list '("⏹" "◈" "⚬" "▷"))
+  (org-superstar-headline-bullets-list '("⌾" "◈" "⚬" "▷"))
 
   (org-hide-leading-stars nil)
   (org-superstar-leading-bullet ?\s)
