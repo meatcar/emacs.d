@@ -174,11 +174,19 @@ Pretty Info colors
 
 ** Restart-emacs
 #+begin_src emacs-lisp
+(defun my/reload-init ()
+  "Reload init.el."
+  (interactive)
+  (message "Reloading init.el...")
+  (load user-init-file nil 'nomessage)
+  (message "Reloading init.el... done."))
+
 (use-package restart-emacs
   :general
   (leader-def
     "q" '(:ignore t :wk "exit emacs")
-    "qr" 'restart-emacs))
+    "qR" 'restart-emacs
+    "qr" 'my/reload-init))
 #+end_src
 
 ** Prescient
@@ -389,21 +397,23 @@ Pretty Info colors
 ** Themes
 We will load all the themes
 #+begin_src emacs-lisp
-(use-package base16-theme)
+(use-package base16-theme
+  :defer t)
 
-(use-package leuven-theme)
+(use-package leuven-theme
+  :defer t)
 
 (use-package vivid-theme
-  :straight (:host github :repo "websymphony/vivid-theme"))
+  :straight (:host github :repo "websymphony/vivid-theme")
+  :defer t)
 
 (use-package dracula-theme
-  :after counsel leuven-theme vivid-theme
+  :defer t
   :config
-  (load-theme 'leuven t)
-  (disable-theme 'leuven)
-  (load-theme 'vivid t)
-  (disable-theme 'vivid)
-  (load-theme 'dracula t))
+  )
+
+(add-hook 'after-init-hook
+          #'(lambda () (load-theme 'dracula t)))
 #+end_src
 
 ** Mode Line

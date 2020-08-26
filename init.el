@@ -67,6 +67,10 @@ NAME and ARGS are as in `use-package'."
 
 (straight-use-package 'use-package)
 
+(use-package benchmark-init
+  :demand t
+  :hook (after-init . benchmark-init/deactivate))
+
 (use-package org)
 (org-babel-load-file (expand-file-name "config.org" user-emacs-directory))
 
