@@ -279,6 +279,10 @@ Pretty Info colors
 
 ** Projectile
 #+begin_src emacs-lisp
+(defun my/expand-git-project-dirs (root)
+  (mapcan #'(lambda (d) (cddr (directory-files d t)))
+          (cddr (directory-files root t))))
+
 (use-package projectile
   :general
   (leader-def
@@ -290,8 +294,16 @@ Pretty Info colors
     "p/" 'projectile-ripgrep)
   :custom
   (projectile-completion-system 'default)
+  (projectile-enable-caching t)
+  (projectile-project-search-path
+   (my/expand-git-project-dirs "~/git"))
+  (projectile-sort-order 'recently-active)
   :config
-  (projectile-mode +1))
+  (projectile-mode +1)
+  (projectile-discover-projects-in-search-path)
+  (if (eq system-type 'windows-nt)
+      (setq projectile-indexing-method 'native)
+    (setq projectile-indexing-method 'hybrid)))
 #+end_src
 
 ** Git Gutter
@@ -443,6 +455,8 @@ We will load all the themes
   (:states 'normal
            "gt"  'centaur-tabs-forward
            "gT"  'centaur-tabs-backward)
+  (leader-def
+    "tg" 'centaur-tabs-toggle-groups)
   :hook
   (dashboard-mode . centaur-tabs-local-mode)
   (term-mode . centaur-tabs-local-mode)
@@ -603,7 +617,7 @@ We will load all the themes
   :custom
   (org-directory "~/Sync/org")
   (org-src-fontify-natively t)
-  (org-src-window-setup 'current-window)
+  (org-src-window-setup 'other-window)
   (org-src-strip-leading-and-trailing-blank-lines t)
   (org-src-preserve-indentation t)
   (org-src-tab-acts-natively t)
@@ -614,7 +628,7 @@ We will load all the themes
   (org-pretty-entities t)
   (org-fontify-quote-and-verse-blocks t)
   (org-cycle-separator-lines -1)
-  (org-ellipsis "...")
+  (org-ellipsis " ▿")
   (org-tag-column 0)
   :hook (org-mode . org-indent-mode)
   :config
@@ -691,6 +705,7 @@ We will load all the themes
   (org-confirm-elisp-link-function nil)
   :config
   (org-projectile-per-project)
+  (projectile-add-known-project org-directory)
   ;; avoid adding non-existing files.
   (setq org-agenda-files
         (append org-agenda-files
