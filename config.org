@@ -337,6 +337,17 @@ Pretty Info colors
 (setq-default line-spacing 1)
 
 (global-hl-line-mode t)
+
+;; Add padding inside buffer windows
+(setq-default left-margin-width 2
+              right-margin-width 2)
+(set-window-buffer nil (current-buffer)) ; Use them now.
+
+;; Add padding inside frames (windows)
+(add-to-list 'default-frame-alist '(internal-border-width . 8))
+(set-frame-parameter nil 'internal-border-width 8) ; Use them now
+#+end_src
+
 ** Fonts
 #+begin_src emacs-lisp
 (use-package persistent-soft)
