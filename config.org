@@ -172,6 +172,15 @@ Pretty Info colors
   (add-hook 'Info-selection-hook 'info-colors-fontify-node))
 #+end_src
 
+** Restart-emacs
+#+begin_src emacs-lisp
+(use-package restart-emacs
+  :general
+  (leader-def
+    "q" '(:ignore t :wk "exit emacs")
+    "qr" 'restart-emacs))
+#+end_src
+
 ** Prescient
 #+begin_src emacs-lisp
 (use-package prescient
