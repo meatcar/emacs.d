@@ -374,8 +374,12 @@ We will load all the themes
   :straight (:host github :repo "websymphony/vivid-theme"))
 
 (use-package dracula-theme
-  :after doom-themes kaolin-themes
+  :after counsel leuven-theme vivid-theme
   :config
+  (load-theme 'leuven t)
+  (disable-theme 'leuven)
+  (load-theme 'vivid t)
+  (disable-theme 'vivid)
   (load-theme 'dracula t))
 #+end_src
 
