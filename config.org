@@ -235,7 +235,11 @@ Pretty Info colors
   :after flycheck
   :hook (flycheck-mode . flycheck-posframe-mode)
   :config
-  (flycheck-posframe-configure-pretty-defaults))
+  (flycheck-posframe-configure-pretty-defaults)
+  (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)
+  (add-hook 'flycheck-posframe-inhibit-functions #'evil-insert-state-p)
+  (add-hook 'flycheck-posframe-inhibit-functions #'evil-replace-state-p)
+  (advice-add 'org-edit-src-exit :after #'flycheck-posframe-hide-posframe))
 #+end_src
 
 ** Format All
@@ -252,6 +256,9 @@ Pretty Info colors
   :after company prescient
   :config
   (company-prescient-mode))
+(use-package company-posframe
+  :config
+  (company-posframe-mode 1))
 #+end_src
 
 ** Magit
@@ -683,6 +690,8 @@ We will load all the themes
 #+begin_src emacs-lisp
 (use-package elisp-mode
   :straight (:type built-in)
+  :hook
+  (org-src-mode . (lambda () (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc))))
   :general
   (localleader-def
     :keymaps 'emacs-lisp-mode-map
