@@ -748,4 +748,17 @@ We will load all the themes
   :hook
   (shell-mode . pretty-sha-path-mode)
   (dired-mode . pretty-sha-path-mode))
-   #+end_src
+#+end_src
+
+
+** Markdown
+#+begin_src emacs-lisp
+(use-package markdown-mode
+  :commands gfm-mode markdown-mode
+  :mode
+  ("README\\.md\\'" . gfm-mode)
+  ("\\.md\\'" . markdown-mode)
+  ("\\.markdown\\'" . markdown-mode)
+  :custom
+  (markdown-command '("pandoc" "--from=markdown" "--to=html5")))
+#+end_src
