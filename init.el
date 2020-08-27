@@ -39,7 +39,8 @@
 ;; Set up straight.el
 (setq debug-on-error t)
 (setq straight-use-package-by-default t
-      use-package-always-demand t)
+      use-package-always-demand t
+      straight-cache-autoloads t)
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -54,7 +55,7 @@
   (load bootstrap-file nil 'nomessage))
 
 (require 'straight-x)
-(setq straight-check-for-modifications '(check-on-save))
+;; (setq straight-check-for-modifications '(check-on-save))
 (setq vc-follow-symlinks t)
 
 (defmacro use-feature (name &rest args)
