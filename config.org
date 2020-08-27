@@ -1,53 +1,83 @@
 #+STARTUP: content
 #+PROPERTY: header-args :results silent
 
-* The Bestest =.emacs.d=
+* The Bestest Emacs
 
-  Inspired by Spacemacs and Doom Emacs. Most of the "aesthetic" parts of those distributions are available as plugins, so gluing together your own configuration isn't too hard.
+Inspired by Spacemacs and Doom Emacs. Most of the "aesthetic" parts of those distributions are available as plugins, so gluing together your own configuration isn't too hard.
 
-  Featuring:
+Featuring:
 
-  - [[https://github.com/raxod502/straight.el][straight.el]]
-  - maximal [[https://github.com/jwiegley/use-package][use-package]]
-  - maximal [[https://github.com/emacs-evil/evil][EVIL]]
+- [[https://github.com/raxod502/straight.el][straight.el]] for package management
+- maximal [[https://github.com/jwiegley/use-package][use-package]] for package configuration
+- maximal [[https://github.com/emacs-evil/evil][EVIL]] for vim comfort
+
+* Goals
+
+** Multi-platform
+Be multi-platform, as I jump between Linux, Windows, and WSL
+
+** Consistency and Modernity
+Be as idiomatic as possible. Parts of this config have been copied and pasted from other places, but are rewritten/updated if needed to stay consistent and easy to read.
+
+Every feature provided by ~use-package~ is used over calling elisp functions. That means ~:custom~ is preferred over ~setq~, ~:hook~ over ~add-hook~, etc. where possible.
+
+** Minimal Customization, Maximal Reuse
+Minimal customization of packages we use, unless they misbehave. Try to document and rationalize any setting set thats not part of the package's setup instructions.
+
+Try to avoid "Not Invented Here" syndrome, use an existing package to do something instead of rolling our own.
+
+* Startup, general Emacs settings
+** Lexical Binding
+Make elisp in this file behave like we expect these days. Everyone has this set, but no one explains why.
+
+In non-elisp speak, it adds proper scoping and "closure" behaviour to variables.[[https://www.emacswiki.org/emacs/DynamicBindingVsLexicalBinding][This Emacswiki article explains it well.]]
 
 #+begin_src emacs-lisp :comments no
 ;;; config.el -*- lexical-binding: t; -*-
 #+end_src
 
-* Startup, general Emacs settings
+** Constants
+#+begin_src emacs-lisp
+(setq *is-windows* (eq system-type 'windows-nt)
+      *is-unix* (not *is-windows*))
+#+end_src
+
+** General settings
+Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does.
+
 #+BEGIN_SRC emacs-lisp
+;; don't expect "yes" or "no" in prompts, "y" or "n" is enough.
 (defalias 'yes-or-no-p 'y-or-n-p)
 (setq inhibit-startup-message t
-      custom-safe-themes t
+      custom-safe-themes t ; all themes we install are safe
       create-lockfiles nil
       confirm-kill-processes nil
       backup-by-copying t
       require-final-newline t
       delete-old-versions t
-      enable-local-variables :safe
-
-      ;; Always redraw immediately when scrolling,
-      ;; more responsive and doesn't hang!
-      ;; http://emacs.stackexchange.com/a/31427/2418
-      fast-but-imprecise-scrolling t
-      jit-lock-defer-time 0)
+      enable-local-variables :safe)
 
 ;; Hide Scroll bar,menu bar, tool bar
 (scroll-bar-mode -1)
 (tool-bar-mode -1)
 (menu-bar-mode -1)
 
-(global-auto-revert-mode)
-(save-place-mode)
+;; auto-revert files if emacs crashed
+(global-auto-revert-mode 1)
 
+;; save where you were when you last edited some file
+(save-place-mode 1)
+
+;; save window layout & buffers
 (setq desktop-restore-eager 5)
 (desktop-save-mode 1)
 
+;; let's not use tabs for indenting by default
 (setq-default indent-tabs-mode nil)
 #+END_SRC
 
 ** UTF-8 by Default
+Emacs is very conservative about assuming encoding. Everything is utf-8 these days, lets have that as the default.
 #+begin_src emacs-lisp
 (prefer-coding-system 'utf-8)
 (set-default-coding-systems 'utf-8)
@@ -56,7 +86,7 @@
 (set-selection-coding-system 'utf-8)
 (set-file-name-coding-system 'utf-8)
 (set-clipboard-coding-system 'utf-8)
-(if (eq system-type 'windows-nt)
+(if *is-windows*
   (set-w32-system-coding-system 'utf-8))
 (set-buffer-file-coding-system 'utf-8)
 #+end_src
@@ -64,6 +94,9 @@
 * Packages
 
 ** No Littering
+[[https://github.com/emacscollective/no-littering][no-littering]] teaches Emacs to not leave it's files everywhere, and just keep them neatly in =.emacs.d= where they don't bother anyone.
+
+We also set ~custom-file~ to be within one of these new nice directories, so Emacs doesn't keep chaging =init.el= and messing with our git workflow.
 #+begin_src emacs-lisp
 (use-package no-littering
   :config
@@ -76,26 +109,25 @@
 #+end_src
 
 ** Which-key
+[[https://github.com/justbur/emacs-which-key][which-key]] pops up a nice window whenever we hesitate about a keyboard shortcut, and shows all the possible keys we can press. Popularized by Spacemacs and Doom-Emacs, we can now configure absurd key combinations, forget about them, and then be delighted to discover them again!
 
 #+begin_src emacs-lisp
 (use-package which-key
   :after evil
   :custom
-  (which-key-show-early-on-C-h t)
-  (which-key-idle-delay 0.3)
-  (which-key-idle-secondary-delay 0.1)
   (which-key-allow-evil-operators t)
-  (which-key-add-column-padding 1)
   (which-key-show-remaining-keys t)
   (which-key-sort-order 'which-key-prefix-then-key-order)
   :config
-  (which-key-mode)
+  (which-key-mode 1)
   (which-key-setup-side-window-bottom)
-  (set-face-attribute 'which-key-local-map-description-face nil :weight 'bold))
-
+  (set-face-attribute
+    'which-key-local-map-description-face nil :weight 'bold))
 #+end_src
 
 ** Evil
+[[https://github.com/emacs-evil/evil][EVIL]] is vim emulation in Emacs. There are a number of other evil packages which add vim-like bindings to various modes.
+
 #+BEGIN_SRC emacs-lisp
 (use-package evil
   :init
@@ -104,7 +136,8 @@
         evil-want-C-u-scroll t
         evil-want-Y-yank-to-eol t
         evil-split-window-below t
-        evil-vsplit-window-right t)
+        evil-vsplit-window-right t
+        evil-respect-visual-line-mode t)
   :config
   (evil-mode 1))
 (use-package evil-collection
@@ -113,7 +146,7 @@
   (evil-collection-init))
 (use-package evil-commentary
   :config
-  (evil-commentary-mode))
+  (evil-commentary-mode 1))
 (use-package evil-surround
   :config
   (global-evil-surround-mode 1))
@@ -122,15 +155,17 @@
   :hook (org-mode . evil-org-mode)
   :config
   (add-hook 'evil-org-mode-hook
-            (lambda ()
-              (evil-org-set-key-theme)))
+            #'(lambda () (evil-org-set-key-theme)))
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
 (use-package evil-magit)
 #+END_SRC
 
-** [[https://github.com/noctuid/general.el][general.el]]
-Keybindings
+** General.el
+[[https://github.com/noctuid/general.el][general.el]] is a wrapper around Emacs key-binding mechanisms to make them easier to use. It integrates with use-package, evil, and which-key.
+
+We will define two "leader maps", similar to vim's =<leader>= and =<localleader>= that we will use to bind global and major-mode-specific keybindings. This is how we're kind of like
+
 #+begin_src emacs-lisp
 (use-package general
   :after evil
@@ -151,7 +186,7 @@ Keybindings
 #+end_src
 
 ** Helpful
-Better Emacs =*help*= buffer.
+[[https://github.com/Wilfred/helpful][helpful]] makes a better Emacs =*help*= buffer, with colors and contextual information.
 
 #+begin_src emacs-lisp
 (use-package helpful
@@ -165,7 +200,8 @@ Better Emacs =*help*= buffer.
 #+end_src
 
 ** Info-colors
-Pretty Info colors
+[[https://github.com/ubolonton/info-colors][info-colors]] adds pretty Info colors.
+
 #+begin_src emacs-lisp
 (use-package info-colors
   :config
@@ -173,6 +209,8 @@ Pretty Info colors
 #+end_src
 
 ** Restart-emacs
+[[https://github.com/iqbalansari/restart-emacs][restart-emacs]] teaches Emacs to restart itself. I added a ~my/reload-init~ command as well to just reload the =init.el= file without a full restart.
+
 #+begin_src emacs-lisp
 (defun my/reload-init ()
   "Reload init.el."
@@ -190,17 +228,23 @@ Pretty Info colors
 #+end_src
 
 ** Prescient
+[[https://github.com/raxod502/prescient.el][prescient.el]] teaches =ivy= and =company= better sorting and filtering.
+
 #+begin_src emacs-lisp
 (use-package prescient
   :config
-  (prescient-persist-mode))
+  (prescient-persist-mode 1))
 #+end_src
 
 ** Counsel, Ivy
+[[https://github.com/abo-abo/swiper][swiper/ivy/counsel]] is a great UI to visualize and filter lists. It sets itself up to augment most prompts to filter possible matches as you type. It's good stuff.
+
 #+begin_src emacs-lisp
 (use-package ivy
   :custom
+  ;; add bookmarks and recentf to buffer lists
   (ivy-use-virtual-buffers t)
+  ;; better matching method
   (ivy-re-builders-alist '((t . ivy--regex-plus)))
   :config
   (ivy-mode 1))
@@ -222,19 +266,23 @@ Pretty Info colors
            "C-S-p"  'counsel-M-x)
   :config
   (counsel-mode 1))
+;; better fuzzy matching.
 (use-package flx)
 (use-package ivy-prescient
-  :after (ivy prescient)
+  :after ivy prescient
   :config
-  (ivy-prescient-mode))
+  (ivy-prescient-mode 1))
+;; add more information to ivy/counsel
 (use-package ivy-rich
-  :after ivy
+  :after ivy all-the-icons-ivy-rich
   :config
   (ivy-rich-mode 1)
   (setq ivy-initial-inputs-alist nil))
 #+end_src
 
 ** Flycheck
+[[https://github.com/flycheck/flycheck][flycheck]] gathers syntax errors and warnings on-the-fly. We use [[https://github.com/alexmurray/flycheck-posframe][flycheck-posframe]] to show them if the cursor is on a flycheck warning.
+
 #+begin_src emacs-lisp
 (use-package flycheck
   :init
@@ -251,25 +299,50 @@ Pretty Info colors
 #+end_src
 
 ** Format All
+[[https://github.com/lassik/emacs-format-all-the-code][emacs-format-all-the-code]] knows about all the different formatters for different languuages, and tries to run them if they are installed. We configure it to format all modes that are in the ~auto-format-modes~ list on save. We well add modes to this later.
+
 #+begin_src emacs-lisp
-(use-package format-all)
+(defcustom auto-format-modes '()
+  "Modes to turn on format-all-mode in")
+(defcustom auto-format-dirs '()
+  "Directories to turn on format-all-mode in")
+
+(require 'cl-lib)
+(defun my/auto-format-buffer-p ()
+  (and
+   (member major-mode auto-format-modes)
+   (buffer-file-name)
+   (save-match-data
+     (let ((dir (file-name-directory (buffer-file-name))))
+       (cl-some (lambda (regexp) (string-match regexp dir))
+                auto-format-dirs)))))
+
+(defun my/maybe-format-all-mode ()
+  (format-all-mode (if (my/auto-format-buffer-p) 1 0)))
+
+(use-package format-all
+  :hook (after-change-major-mode . my/maybe-format-all-mode))
 #+end_src
 
 ** Company
+[[http://company-mode.github.io/][company-mode]] gives us the standard dropdown as-you-type of modern IDEs.
+
 #+begin_src emacs-lisp
 (use-package company
   :config
-  (global-company-mode))
+  (global-company-mode 1))
 (use-package company-prescient
   :after company prescient
   :config
-  (company-prescient-mode))
+  (company-prescient-mode 1))
 (use-package company-posframe
   :config
   (company-posframe-mode 1))
 #+end_src
 
 ** Magit
+[[https://github.com/magit/magit][magit]] is a magic UI for dealing with git. The keybinds are intuitive, and it pops up suggestion a-la =which-key= if you aren't sure what button to  press next.
+
 #+begin_src emacs-lisp
 (use-package magit
   :general
@@ -277,17 +350,38 @@ Pretty Info colors
     "g"  '(:ignore t :wk "git")
     "gs" '(magit :wk "git status")
     "gg" '(magit :wk "git status")))
+#+end_src
+
+We pair it with [[https://github.com/alphapapa/magit-todos][magit-todos]] which shows any =TODO=, =FIXME=, =XXX=, =BUG=, etc. comments in the codebase.
+
+#+begin_src emacs-lisp
 (use-package magit-todos
   :after magit
   :custom
   (magit-todos-nice nil)
   :config
-  (magit-todos-mode))
+  (magit-todos-mode 1))
+#+end_src
+
+[[https://github.com/dandavison/magit-delta][magit-delta]] improves the coloring of diffs in magit using [[https://github.com/dandavison/delta][delta]].
+
+#+begin_src emacs-lisp
+(use-package magit-delta
+  :if *is-unix*
+  :custom
+  (magit-delta-default-dark-theme "Dracula")
+  :config
+  (magit-delta-mode 1))
 #+end_src
 
 ** Projectile
+[[https://github.com/bbatsov/projectile][projectile]] teaches Emacs to be aware of different ways a "project" folder can be recognized, and enables easy jumping and using of multiple projects in the same instance of emacs.
+
 #+begin_src emacs-lisp
 (defun my/expand-git-project-dirs (root)
+  "Return a list of all project directories 2 levels deep in ROOT.
+
+Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/project=, return a list of 'user' directories that are part of the ROOT."
   (mapcan #'(lambda (d) (cddr (directory-files d t)))
           (cddr (directory-files root t))))
 
@@ -306,24 +400,27 @@ Pretty Info colors
   (projectile-project-search-path
    (my/expand-git-project-dirs "~/git"))
   (projectile-sort-order 'recently-active)
+  (projectile-indexing-method (if *is-unix* 'hybrid 'native))
   :config
   (projectile-mode +1)
-  (projectile-discover-projects-in-search-path)
-  (if (eq system-type 'windows-nt)
-      (setq projectile-indexing-method 'native)
-    (setq projectile-indexing-method 'hybrid)))
+  (projectile-discover-projects-in-search-path))
 #+end_src
 
 ** Git Gutter
+[[https://github.com/dgutov/diff-hl][diff-hl]] shows uncommitted git changes on left side of the buffer.
+
 #+begin_src emacs-lisp
 (use-package diff-hl
   :hook
   (dired-mode . diff-hl-dired-mode-unless-remote)
   :config
-  (global-diff-hl-mode))
+  (global-diff-hl-mode 1))
 #+end_src
 
 ** Treemacs
+[[https://github.com/Alexander-Miller/treemacs][treemacs]] is a sidebar tree file explorer of the current directory/project.
+=evil=, =projectile=, and =magit= integration is enabled.
+
 #+begin_src emacs-lisp
 (use-package treemacs
   :general
@@ -339,8 +436,9 @@ Pretty Info colors
 #+end_src
 
 * Interface
+A good-looking tool is a pleasure to work with. Here, we try to tweak all the dials Emacs gives us to make it pretty and =A E S T H E T I C=.
 
-** Aesthetic
+** Aesthetics
 #+begin_src emacs-lisp
 (setq ring-bell-function 'ignore ; no bell
       ;; better scrolling
@@ -349,13 +447,18 @@ Pretty Info colors
       scroll-preserve-screen-position 1
       mouse-wheel-scroll-amount '(1 ((shift) . 5))
       mouse-wheel-follow-mouse t
+      ;; lines between the cursor and the edge of the screen
       scroll-margin 3
 
+      ;; wrap lines that are too long.
       truncate-lines nil
+      ;; don't resize frames a character at a time, but use pixels
       frame-resize-pixelwise t)
 
+;; add some space between lines for easier reading.
 (setq-default line-spacing 1)
 
+;; highlight the current line
 (global-hl-line-mode t)
 
 ;; Add padding inside buffer windows
@@ -369,12 +472,16 @@ Pretty Info colors
 #+end_src
 
 ** Fonts
+The [[https://github.com/rolandwalker/unicode-fonts][unicode-fonts]] package helps Emacs use the full range of unicode characters provided by most fonts.
+
+We set a regular font and a ~variable-pitch~ one, the latter is used by ~mixed-pitch-mode~ to render regular text with a proportional font.
+
 #+begin_src emacs-lisp
 (use-package persistent-soft)
 (use-package unicode-fonts
   :after persistent-soft
   :config
-  (if (eq system-type 'windows-nt)
+  (if *is-windows*
     (custom-set-faces
        '(default ((t (:family "GoMono NF" :height 90))))
        '(variable-pitch ((t (:family "Georgia" :height 110)))))
@@ -384,6 +491,15 @@ Pretty Info colors
 #+end_src
 
 ** Fast Scroll
+Always redraw immediately when scrolling, more responsive and doesn't hang! Sourced from http://emacs.stackexchange.com/a/31427/2418
+
+#+begin_src emacs-lisp
+(setq fast-but-imprecise-scrolling t
+      jit-lock-defer-time 0)
+#+end_src
+
+[[https://github.com/ahungry/fast-scroll][fast-scroll]] "works by temporarily disabling font-lock and switching to a barebones mode-line, until you stop scrolling (at which point it re-enables)". It only does this when scrolling super fast, to keep everything responsive.
+
 #+begin_src emacs-lisp
 (use-package fast-scroll
   :hook
@@ -395,7 +511,8 @@ Pretty Info colors
 #+end_src
 
 ** Themes
-We will load all the themes
+We will load all the themes. We need to ~:defer~ them, to prevent each theme getting loaded upon init, and flashing emacs and conflicting with each other.
+
 #+begin_src emacs-lisp
 (use-package base16-theme
   :defer t)
@@ -408,28 +525,41 @@ We will load all the themes
   :defer t)
 
 (use-package dracula-theme
-  :defer t
-  :config
-  )
+  :defer t)
 
 (add-hook 'after-init-hook
           #'(lambda () (load-theme 'dracula t)))
 #+end_src
 
 ** Mode Line
+[[https://github.com/seagle0128/doom-modeline][doom-modeline]] provides a clean and simple modeline (bottom bar) for each buffer. We pair it with the [[https://github.com/tarsius/minions][minions]] minor mode to collect all minor modes into a single menu. [[https://github.com/emacsorphanage/anzu][anzu]] is used to show the number of matches when we search in a file.
+
 #+begin_src emacs-lisp
 (use-package anzu
   :after isearch
   :config
-  (global-anzu-mode))
+  (global-anzu-mode 1))
+
+(use-package minions
+  :config
+  (minions-mode 1))
 
 (use-package doom-modeline
-  :after anzu
+  :custom
+  (inhibit-compacting-font-caches t)
+  ;; make the modeline only as tall as the font, please.
+  (doom-modeline-height 1)
+  ;; 1 minor mode will be shown thanks to minions
+  (doom-modeline-minor-modes t)
   :config
-  (doom-modeline-mode))
+  (doom-modeline-mode 1))
 #+end_src
 
 ** All The Icons
+[[https://github.com/domtronn/all-the-icons.el/][all-the-icons]] allows emacs to show pretty icons anywhere we want.
+
+We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-dired]] to show them in =dired=, [[https://github.com/Alexander-Miller/treemacs/blob/master/src/extra/treemacs-all-the-icons.el][treemacs-all-the-icons]] to show them in =treemacs=, [[https://github.com/asok/all-the-icons-ivy][all-the-icons-ivy]] to show them in =ivy=, and [[https://github.com/seagle0128/all-the-icons-ivy-rich][all-the-icons-ivy-rich]] to show them in =ivy-rich=.
+
 #+begin_src emacs-lisp
 (use-package all-the-icons)
 (use-package all-the-icons-dired
@@ -438,14 +568,23 @@ We will load all the themes
   :after treemacs
   :config
   (treemacs-load-theme "all-the-icons"))
+(use-package all-the-icons-ivy
+  :config
+  (all-the-icons-ivy-setup))
+(use-package all-the-icons-ivy-rich
+  :config
+  (all-the-icons-ivy-rich-mode 1))
 #+end_src
 
 ** Dashboard
+[[https://github.com/emacs-dashboard/emacs-dashboard][emacs-dashboard]] adds a nice startup screen, showing recent files, projectes, etc.
+
 #+begin_src emacs-lisp
 (use-package dashboard
-  :after all-the-icons
-  :after projectile
+  :after all-the-icons projectile
   :custom
+  ;; show in `emacsclient -c`
+  (initial-buffer-choice #'(lambda () (get-buffer "*dashboard*")))
   (dashboard-startup-banner 'logo)
   (dashboard-set-heading-icons t)
   (dashboard-set-file-icons t)
@@ -458,6 +597,10 @@ We will load all the themes
 #+end_src
 
 ** Tabs
+[[https://github.com/ema2159/centaur-tabs][centaur-tabs]] add tabs to the top of the window for emacs. It might sound crazy, but they are useful to keep an eye on which buffers you have open, especially when you jump between projects.
+
+Out of the box they come configured ok, but not perfect. We configure the tabs to group by project, and hide/show them for more buffers.
+
 #+begin_src emacs-lisp
 (use-package centaur-tabs
   :after all-the-icons
@@ -477,7 +620,7 @@ We will load all the themes
   (centaur-tabs-style "bar")
   (centaur-tabs-set-icons t)
   (centaur-tabs-set-modified-marker t)
-  (centaur-tabs-height 32)
+  (centaur-tabs-height 22)
   (x-underline-at-descent-line t)
   (uniquify-separator "/")
   (uniquify-buffer-name-style 'forward)
@@ -523,24 +666,31 @@ We will load all the themes
                           diary-mode))
        "OrgMode")
       (t
-       (or (concat "Project: " (projectile-project-name)) (centaur-tabs-get-group-name (current-buffer))))))))
+       (or (concat "Project: " (projectile-project-name))
+           (centaur-tabs-get-group-name (current-buffer))))))))
 #+end_src
 
 ** Wrap Long Lines
+[[https://github.com/joostkremers/visual-fill-column][visual-fill-column]] wraps lines at ~fill-column~, and makes it easier to read long lines of code. It is preferred over the built-in ~visual-line-mode~ because it doesn't break words.
+
 #+begin_src emacs-lisp
 (use-package visual-fill-column
   :hook (org-src . visual-fill-column-mode)
+  :custom
+  (visual-line-fringe-indicators
+   '(left-curly-arrow right-curly-arrow))
+  (split-window-preferred-function
+   'visual-fill-column-split-window-sensibly)
   :config
-  (setq split-window-preferred-function
-        'visual-fill-column-split-window-sensibly)
   (advice-add 'text-scale-adjust
               :after #'visual-fill-column-adjust)
-  (global-visual-fill-column-mode)
-  (global-visual-line-mode))
-
+  (global-visual-fill-column-mode 1)
+  (global-visual-line-mode 1))
 #+end_src
 
 ** Mixed Pitch Mode
+[[https://gitlab.com/jabranham/mixed-pitch][mixed-pitch]] allows us to use proportional fonts to display text that isn't code, and make files more readable.
+
 #+begin_src emacs-lisp
 (use-package mixed-pitch
   :after all-the-icons
@@ -557,13 +707,23 @@ We will load all the themes
       sentence-end-double-space nil)
 #+end_src
 
+** Editorconfig
+[[https://github.com/editorconfig/editorconfig-emacs][editorconfig]] looks for an =.editorconfig= file, and sets indents and other coding conventions as instructed.
+
+#+begin_src emacs-lisp
+(use-package editorconfig
+  :config
+  (editorconfig-mode 1))
+#+end_src
+
 ** Cleanup Trailing Whitespace
+
 #+begin_src emacs-lisp
 (use-package whitespace-cleanup-mode
   :custom
   (show-trailing-whitespace t)
   :config
-  (global-whitespace-cleanup-mode))
+  (global-whitespace-cleanup-mode 1))
 #+end_src
 
 ** Paren
@@ -573,7 +733,7 @@ We will load all the themes
   :custom
   (show-paren-when-point-inside-paren t)
   :config
-  (show-paren-mode))
+  (show-paren-mode 1))
 #+end_src
 
 ** Rainbow Delimiters
@@ -589,21 +749,22 @@ We will load all the themes
 
 ** Parinfer
 #+begin_src emacs-lisp
-(if (eq system-name 'windows-nt)
-    (use-package parinfer
-      :hook
-      (emacs-lisp-mode . parinfer-mode)
-      (lisp-mode . parinfer-mode)
-      (clojure-mode . parinfer-mode)
-      :init
-      (setq parinfer-extensions '(defaults pretty-parens evil)))
-  (use-package parinfer-rust-mode
-    :hook
-    emacs-lisp-mode
-    lisp-mode
-    clojure-mode
-    :custom
-    (parinfer-rust-auto-download t)))
+(use-package parinfer
+  :if *is-windows*
+  :hook
+  (emacs-lisp-mode . parinfer-mode)
+  (lisp-mode . parinfer-mode)
+  (clojure-mode . parinfer-mode)
+  :init
+  (setq parinfer-extensions '(defaults pretty-parens evil)))
+(use-package parinfer-rust-mode
+  :if *is-unix*
+  :hook
+  emacs-lisp-mode
+  lisp-mode
+  clojure-mode
+  :custom
+  (parinfer-rust-auto-download t))
 #+end_src
 
 * Org Mode
@@ -680,7 +841,7 @@ We will load all the themes
                           (point-min) (point-max))))
       (unless (< list-items 100))
       (org-superstar-toggle-lightweight-lists))
-    (org-superstar-mode)))
+    (org-superstar-mode 1)))
 #+end_src
 
 ** org-clock
