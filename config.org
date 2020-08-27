@@ -845,16 +845,16 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
 #+end_src
 
 ** org-clock
+Track time spent on tasks in org-mode.
 #+begin_src emacs-lisp
 (use-feature org-clock
   :after org
-  :init
-  (setq org-clock-persist t)
   :custom
   (org-clock-in-resume t)
   (org-clock-out-remove-zero-time-clocks t)
   (org-clock-report-include-clocking-task t)
   (org-clock-auto-clock-resolution 'when-no-clock-is-running)
+  (org-clock-persist t)
   :general
   (localleader-def
     :keymap org-mode-map
@@ -864,11 +864,27 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
     "cf" 'org-clock-goto
     "cq" 'org-clock-cancel
     "cc" 'org-clock-in-last)
-  :config
-  (org-clock-load)
-  (org-clock-persistence-insinuate))
+  ;; lazy-load org-clock, as it slows down init quite a bit.
+  ;; source: https://github.com/raxod502/radian
+  :commands org-clock-load org-clock-save
+  :init
+  ;; Allow clock data to be saved persistently.
+  (setq org-clock-persist t)
 
-;; TODO: see raxod502/radian for how to lazy-load clock
+  ;; Actually enable clock persistence. This is taken from
+  ;; `org-clock-persistence-insinuate', but we can't use that function
+  ;; since it causes both `org' and `org-clock' to be loaded for no
+  ;; good reason.
+  (add-hook 'org-mode-hook #'org-clock-load)
+  (add-hook 'kill-emacs-hook #'org-clock-save)
+
+  :config
+  (dolist (fun '(org-clock-in
+                 org-clock-out
+                 org-clock-in-last
+                 org-clock-goto
+                 org-clock-cancel))
+    (advice-add fun :before #'org-clock-load)))
 #+end_src
 
 ** org-projectile
