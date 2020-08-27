@@ -8,3 +8,4 @@ config.el
 early-init.el
 projectile-bookmarks.eld
 places
+/parinfer-rust/

@@ -589,12 +589,21 @@ We will load all the themes
 
 ** Parinfer
 #+begin_src emacs-lisp
-(use-package parinfer
-  :hook ((emacs-lisp-mode . parinfer-mode)
-         (lisp-mode . parinfer-mode)
-         (clojure-mode . parinfer-mode))
-  :init
-  (setq parinfer-extensions '(defaults pretty-parens evil)))
+(if (eq system-name 'windows-nt)
+    (use-package parinfer
+      :hook
+      (emacs-lisp-mode . parinfer-mode)
+      (lisp-mode . parinfer-mode)
+      (clojure-mode . parinfer-mode)
+      :init
+      (setq parinfer-extensions '(defaults pretty-parens evil)))
+  (use-package parinfer-rust-mode
+    :hook
+    emacs-lisp-mode
+    lisp-mode
+    clojure-mode
+    :custom
+    (parinfer-rust-auto-download t)))
 #+end_src
 
 * Org Mode
@@ -758,8 +767,9 @@ We will load all the themes
   :hook
   (shell-mode . pretty-sha-path-mode)
   (dired-mode . pretty-sha-path-mode))
+(use-package direnv
+  :config (direnv-mode 1))
 #+end_src
-
 
 ** Markdown
 #+begin_src emacs-lisp
@@ -771,4 +781,15 @@ We will load all the themes
   ("\\.markdown\\'" . markdown-mode)
   :custom
   (markdown-command '("pandoc" "--from=markdown" "--to=html5")))
+#+end_src
+
+** Clojure
+#+begin_src emacs-lisp
+(use-package clojure-mode)
+
+(use-package clj-refactor
+  :hook (clojure-mode . clj-refactor-mode))
+
+(use-package cider
+  :hook (clojure-mode . cider-mode))
 #+end_src
