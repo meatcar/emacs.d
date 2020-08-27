@@ -39,7 +39,11 @@ In non-elisp speak, it adds proper scoping and "closure" behaviour to variables.
 ** Constants
 #+begin_src emacs-lisp
 (setq *is-windows* (eq system-type 'windows-nt)
-      *is-unix* (not *is-windows*))
+      ,*is-unix* (not *is-windows*)
+      ,*mono-font-family* (if *is-windows* "GoMono NF" "Go Mono")
+      ,*mono-font-height* 90
+      ,*serif-font-family* (if *is-windows* "Georgia" "IBM Plex Serif")
+      ,*serif-font-height* (if *is-windows* 110 100))
 #+end_src
 
 ** General settings
@@ -481,13 +485,11 @@ We set a regular font and a ~variable-pitch~ one, the latter is used by ~mixed-p
 (use-package unicode-fonts
   :after persistent-soft
   :config
-  (if *is-windows*
-    (custom-set-faces
-       '(default ((t (:family "GoMono NF" :height 90))))
-       '(variable-pitch ((t (:family "Georgia" :height 110)))))
-    (custom-set-faces
-     '(default ((t (:family "Go Mono" :height 90))))
-     '(variable-pitch ((t (:family "IBM Plex Serif" :height 100)))))))
+  (custom-set-faces
+   `(default ((t (:family ,*mono-font-family*
+                  :height ,*mono-font-height*))))
+   `(variable-pitch ((t (:family ,*serif-font-family*
+                         :height ,*serif-font-height*))))))
 #+end_src
 
 ** Fast Scroll
@@ -620,7 +622,7 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
   (centaur-tabs-style "bar")
   (centaur-tabs-set-icons t)
   (centaur-tabs-set-modified-marker t)
-  (centaur-tabs-height 22)
+  (centaur-tabs-height 28)
   (x-underline-at-descent-line t)
   (uniquify-separator "/")
   (uniquify-buffer-name-style 'forward)
@@ -630,6 +632,8 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
   (centaur-tabs-headline-match)
   (centaur-tabs-enable-buffer-reordering)
   (centaur-tabs-mode t)
+  (centaur-tabs-change-fonts *mono-font-family* *mono-font-height*)
+
 
   (defun centaur-tabs-buffer-groups ()
     "`centaur-tabs-buffer-groups' control buffers' group rules.
