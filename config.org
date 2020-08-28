@@ -1093,7 +1093,10 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (use-package elisp-mode
   :straight (:type built-in)
   :hook
-  (org-src-mode . (lambda () (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc))))
+  (org-src-mode . (lambda ()
+                    (setq-local
+                     flycheck-disabled-checkers
+                     '(emacs-lisp-checkdoc))))
   :general
   (localleader-def
     :keymaps 'emacs-lisp-mode-map
@@ -1147,7 +1150,6 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (use-package clj-refactor
   :after cider
   :hook (clojure-mode . clj-refactor-mode))
-
 #+end_src
 
 * Appendix
@@ -1206,6 +1208,8 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
                         'my/config-tangle
                         nil 'make-it-local))))
 #+end_src
+
+** Remove flycheck elisp warnings in init.el
 
 #+begin_src emacs-lisp
 ;; Local Variables:
