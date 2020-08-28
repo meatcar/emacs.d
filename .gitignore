@@ -4,8 +4,8 @@ var/
 elpa/
 server/
 auto-save-list/
-config.el
+parinfer-rust/
+init.el
 early-init.el
 projectile-bookmarks.eld
 places
-/parinfer-rust/

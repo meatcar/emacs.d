@@ -1,5 +1,6 @@
 #+STARTUP: content
-#+PROPERTY: header-args :results silent
+#+babel: :cache yes
+#+PROPERTY: header-args :results silent :tangle init.el
 
 * The Bestest Emacs
 
@@ -26,33 +27,169 @@ Minimal customization of packages we use, unless they misbehave. Try to document
 
 Try to avoid "Not Invented Here" syndrome, use an existing package to do something instead of rolling our own.
 
-* Startup, general Emacs settings
+* Startup
+
+Emacs startup times can be painful, if left uncontrolled. With a "basic" config like this one still resulting in multi-second startup times, its a frequent topic of debate. Distributions like =doom-emacs= use fast startup times as one of the main selling points. Let's try to pull in all the wisdom on how to keep our config simple yet fast.
+
 ** Lexical Binding
 Make elisp in this file behave like we expect these days. Everyone has this set, but no one explains why.
 
 In non-elisp speak, it adds proper scoping and "closure" behaviour to variables.[[https://www.emacswiki.org/emacs/DynamicBindingVsLexicalBinding][This Emacswiki article explains it well.]]
 
 #+begin_src emacs-lisp :comments no
-;;; config.el -*- lexical-binding: t; -*-
+;;; config.el -*- lexical-binding: t ; eval: (view-mode -1) -*-
 #+end_src
 
-** Constants
+Enable =view-mode=, which both makes the file read-only (as a reminder
+that =init.el= is an auto-generated file, not supposed to be edited),
+and provides some convenient key bindings for browsing through the
+file.
+
+** Speed-up Initialization
+Following [[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly][Doom-Emacs FAQ]], we max the garbage collection threshold on startup, and reset it to the original value after.
+
 #+begin_src emacs-lisp
-(setq *is-windows* (eq system-type 'windows-nt)
-      ,*is-unix* (not *is-windows*)
-      ,*mono-font-family* (if *is-windows* "GoMono NF" "Go Mono")
-      ,*mono-font-height* 90
-      ,*serif-font-family* (if *is-windows* "Georgia" "IBM Plex Serif")
-      ,*serif-font-height* (if *is-windows* 110 100))
+;; max memory available for gc on startup
+(defvar me/gc-cons-threshold 16777216)
+(setq gc-cons-threshold most-positive-fixnum
+      gc-cons-percentage 0.6)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq gc-cons-threshold me/gc-cons-threshold
+                  gc-cons-percentage 0.1)))
+
+;; max memory available for gc when opening minibuffer
+(defun me/defer-garbage-collection-h ()
+  (setq gc-cons-threshold most-positive-fixnum))
+
+(defun me/restore-garbage-collection-h ()
+  ;; Defer it so that commands launched immediately after will enjoy the
+  ;; benefits.
+  (run-at-time
+   1 nil (lambda () (setq gc-cons-threshold me/gc-cons-threshold))))
+
+(add-hook 'minibuffer-setup-hook #'me/defer-garbage-collection-h)
+(add-hook 'minibuffer-exit-hook #'me/restore-garbage-collection-h)
+#+end_src
+
+We also set the ~file-name-handler-alist~ to an empty list, and reset it after Emacs has finished initializing.
+
+#+begin_src emacs-lisp
+(defvar me/-file-name-handler-alist file-name-handler-alist)
+(setq file-name-handler-alist nil)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq file-name-handler-alist me/-file-name-handler-alist)))
+
+(setq inhibit-compacting-font-caches t)
+#+end_src
+
+** Straight.el
+[[https://github.com/raxod502/straight.el][straight.el]] is used to download packages for us from all over the web. It stores them all in their respective git folders in =.emacs.d/straight=, which makes debugging, and contributing fixes back upstream as easy as possible.
+
+First, we configure some settings for =staight.el= to better integrate with =use-package=. [[https://github.com/jwiegley/use-package][use-package]] is a nice and consistent way to declare packages and their respective configs.
+
+#+begin_src emacs-lisp
+(setq straight-use-package-by-default t
+      use-package-always-demand t
+      straight-cache-autoloads t)
+#+end_src
+
+Then, we want to enable debugging whenever we encounter an error.
+
+#+begin_src emacs-lisp
+(setq debug-on-error t)
+#+end_src
+
+We want to Emacs to not ask us when trying to open a symlink.
+
+#+begin_src emacs-lisp
+(setq vc-follow-symlinks t)
+#+end_src
+
+Now, let's fetch =straight.el=.
+
+#+begin_src emacs-lisp
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+end_src
+
+Let's load an optional package which gives us some convenience functions, like ~straight-x-clean-unused-repo~ to remove any packages we don't have configured anymore.
+
+#+begin_src emacs-lisp
+(require 'straight-x)
+#+end_src
+
+Now, let's install =use-package=.
+
+#+begin_src emacs-lisp
+(straight-use-package 'use-package)
+#+end_src
+
+** Benchmarking
+We use [[https://github.com/jschaf/esup][esup]] and [[https://github.com/dholm/benchmark-init-el][benchmark-init-el]] to keep tabs on our startup speed.
+
+#+begin_src emacs-lisp
+(use-package esup
+  :commands esup)
+
+(use-package benchmark-init
+  :hook (after-init . benchmark-init/deactivate))
+#+end_src
+
+Also let's print a message to the =*messages*= buffer with the total startup time.
+
+#+begin_src emacs-lisp
+(add-hook
+ 'emacs-startup-hook
+ (lambda ()
+   (message "Emacs ready in %s with %d garbage collections."
+            (format
+             "%.2f seconds"
+             (float-time
+              (time-subtract after-init-time before-init-time)))
+            gcs-done)))
+#+end_src
+
+* General Emacs settings
+
+** Constants
+Let's define some constants we use throughout our config.
+
+#+begin_src emacs-lisp
+;; environment
+(defconst *is-windows* (eq system-type 'windows-nt))
+(defconst *is-unix* (not *is-windows*))
+
+;; fonts
+(defconst *mono-font-family*
+  (if *is-windows* "GoMono NF" "Go Mono"))
+(defconst *mono-font-height* 90)
+(defconst *serif-font-family*
+  (if *is-windows* "Georgia" "IBM Plex Serif"))
+(defconst *serif-font-height*
+  (if *is-windows* 110 100))
 #+end_src
 
 ** General settings
-Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does.
+Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does, but we use [[https://github.com/hrs/sensible-defaults.el][sensible-defaults.el]] in emacs.
 
 #+BEGIN_SRC emacs-lisp
-;; don't expect "yes" or "no" in prompts, "y" or "n" is enough.
-(defalias 'yes-or-no-p 'y-or-n-p)
-(setq inhibit-startup-message t
+(use-package sensible-defaults
+  :config
+  (sensible-defaults/use-all-settings))
+
+(setq confirm-kill-emacs nil ; unset from sensible-defaults
       custom-safe-themes t ; all themes we install are safe
       create-lockfiles nil
       confirm-kill-processes nil
@@ -66,15 +203,12 @@ Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does.
 (tool-bar-mode -1)
 (menu-bar-mode -1)
 
-;; auto-revert files if emacs crashed
-(global-auto-revert-mode 1)
-
 ;; save where you were when you last edited some file
 (save-place-mode 1)
 
 ;; save window layout & buffers
-(setq desktop-restore-eager 5)
-(desktop-save-mode 1)
+;; (setq desktop-restore-eager 5)
+;; (desktop-save-mode 1)
 
 ;; let's not use tabs for indenting by default
 (setq-default indent-tabs-mode nil)
@@ -82,6 +216,7 @@ Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does.
 
 ** UTF-8 by Default
 Emacs is very conservative about assuming encoding. Everything is utf-8 these days, lets have that as the default.
+
 #+begin_src emacs-lisp
 (prefer-coding-system 'utf-8)
 (set-default-coding-systems 'utf-8)
@@ -94,8 +229,6 @@ Emacs is very conservative about assuming encoding. Everything is utf-8 these da
   (set-w32-system-coding-system 'utf-8))
 (set-buffer-file-coding-system 'utf-8)
 #+end_src
-
-* Packages
 
 ** No Littering
 [[https://github.com/emacscollective/no-littering][no-littering]] teaches Emacs to not leave it's files everywhere, and just keep them neatly in =.emacs.d= where they don't bother anyone.
@@ -134,6 +267,7 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
 
 #+BEGIN_SRC emacs-lisp
 (use-package evil
+  :defer 1
   :init
   (setq evil-want-integration t
         evil-want-keybinding nil
@@ -149,20 +283,22 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
   :config
   (evil-collection-init))
 (use-package evil-commentary
+  :after evil
   :config
   (evil-commentary-mode 1))
 (use-package evil-surround
+  :after evil
   :config
   (global-evil-surround-mode 1))
 (use-package evil-org
-  :after org
+  :after evil org
   :hook (org-mode . evil-org-mode)
   :config
-  (add-hook 'evil-org-mode-hook
-            #'(lambda () (evil-org-set-key-theme)))
+  (add-hook 'evil-org-mode-hook 'evil-org-set-key-theme)
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
-(use-package evil-magit)
+(use-package evil-magit
+  :after evil magit)
 #+END_SRC
 
 ** General.el
@@ -172,7 +308,6 @@ We will define two "leader maps", similar to vim's =<leader>= and =<localleader>
 
 #+begin_src emacs-lisp
 (use-package general
-  :after evil
   :config
   (general-evil-setup t)
   (general-create-definer leader-def
@@ -187,256 +322,6 @@ We will define two "leader maps", similar to vim's =<leader>= and =<localleader>
     :prefix "SPC m"
     :non-normal-prefix "C-SPC m")
   (localleader-def "" '(:ignore t :wk "mode")))
-#+end_src
-
-** Helpful
-[[https://github.com/Wilfred/helpful][helpful]] makes a better Emacs =*help*= buffer, with colors and contextual information.
-
-#+begin_src emacs-lisp
-(use-package helpful
-  :general
-  (leader-def
-    "h" '(:ignore t :wk "help")
-    "hf" 'helpful-callable
-    "hv" 'helpful-variable
-    "hk" 'helpful-key
-    "ho" 'helpful-at-point))
-#+end_src
-
-** Info-colors
-[[https://github.com/ubolonton/info-colors][info-colors]] adds pretty Info colors.
-
-#+begin_src emacs-lisp
-(use-package info-colors
-  :config
-  (add-hook 'Info-selection-hook 'info-colors-fontify-node))
-#+end_src
-
-** Restart-emacs
-[[https://github.com/iqbalansari/restart-emacs][restart-emacs]] teaches Emacs to restart itself. I added a ~my/reload-init~ command as well to just reload the =init.el= file without a full restart.
-
-#+begin_src emacs-lisp
-(defun my/reload-init ()
-  "Reload init.el."
-  (interactive)
-  (message "Reloading init.el...")
-  (load user-init-file nil 'nomessage)
-  (message "Reloading init.el... done."))
-
-(use-package restart-emacs
-  :general
-  (leader-def
-    "q" '(:ignore t :wk "exit emacs")
-    "qR" 'restart-emacs
-    "qr" 'my/reload-init))
-#+end_src
-
-** Prescient
-[[https://github.com/raxod502/prescient.el][prescient.el]] teaches =ivy= and =company= better sorting and filtering.
-
-#+begin_src emacs-lisp
-(use-package prescient
-  :config
-  (prescient-persist-mode 1))
-#+end_src
-
-** Counsel, Ivy
-[[https://github.com/abo-abo/swiper][swiper/ivy/counsel]] is a great UI to visualize and filter lists. It sets itself up to augment most prompts to filter possible matches as you type. It's good stuff.
-
-#+begin_src emacs-lisp
-(use-package ivy
-  :custom
-  ;; add bookmarks and recentf to buffer lists
-  (ivy-use-virtual-buffers t)
-  ;; better matching method
-  (ivy-re-builders-alist '((t . ivy--regex-plus)))
-  :config
-  (ivy-mode 1))
-(use-package counsel
-  :general
-  (leader-def
-    "SPC" '(counsel-M-x :wk "M-x")
-    "f" '(:ignore t :wk "file")
-    "ff" 'counsel-find-file
-    "fr" 'counsel-buffer-or-recentf
-    "b" '(:ignore t :wk "buffer")
-    "bb" 'switch-to-buffer
-    "bd" 'kill-this-buffer
-    "bn" 'next-buffer
-    "bp" 'previous-buffer
-    "tc" 'counsel-load-theme)
-  (:states 'normal
-           "C-p"  'projectile-find-file
-           "C-S-p"  'counsel-M-x)
-  :config
-  (counsel-mode 1))
-;; better fuzzy matching.
-(use-package flx)
-(use-package ivy-prescient
-  :after ivy prescient
-  :config
-  (ivy-prescient-mode 1))
-;; add more information to ivy/counsel
-(use-package ivy-rich
-  :after ivy all-the-icons-ivy-rich
-  :config
-  (ivy-rich-mode 1)
-  (setq ivy-initial-inputs-alist nil))
-#+end_src
-
-** Flycheck
-[[https://github.com/flycheck/flycheck][flycheck]] gathers syntax errors and warnings on-the-fly. We use [[https://github.com/alexmurray/flycheck-posframe][flycheck-posframe]] to show them if the cursor is on a flycheck warning.
-
-#+begin_src emacs-lisp
-(use-package flycheck
-  :init
-  (global-flycheck-mode t))
-(use-package flycheck-posframe
-  :after flycheck
-  :hook (flycheck-mode . flycheck-posframe-mode)
-  :config
-  (flycheck-posframe-configure-pretty-defaults)
-  (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)
-  (add-hook 'flycheck-posframe-inhibit-functions #'evil-insert-state-p)
-  (add-hook 'flycheck-posframe-inhibit-functions #'evil-replace-state-p)
-  (advice-add 'org-edit-src-exit :after #'flycheck-posframe-hide-posframe))
-#+end_src
-
-** Format All
-[[https://github.com/lassik/emacs-format-all-the-code][emacs-format-all-the-code]] knows about all the different formatters for different languuages, and tries to run them if they are installed. We configure it to format all modes that are in the ~auto-format-modes~ list on save. We well add modes to this later.
-
-#+begin_src emacs-lisp
-(defcustom auto-format-modes '()
-  "Modes to turn on format-all-mode in")
-(defcustom auto-format-dirs '()
-  "Directories to turn on format-all-mode in")
-
-(require 'cl-lib)
-(defun my/auto-format-buffer-p ()
-  (and
-   (member major-mode auto-format-modes)
-   (buffer-file-name)
-   (save-match-data
-     (let ((dir (file-name-directory (buffer-file-name))))
-       (cl-some (lambda (regexp) (string-match regexp dir))
-                auto-format-dirs)))))
-
-(defun my/maybe-format-all-mode ()
-  (format-all-mode (if (my/auto-format-buffer-p) 1 0)))
-
-(use-package format-all
-  :hook (after-change-major-mode . my/maybe-format-all-mode))
-#+end_src
-
-** Company
-[[http://company-mode.github.io/][company-mode]] gives us the standard dropdown as-you-type of modern IDEs.
-
-#+begin_src emacs-lisp
-(use-package company
-  :config
-  (global-company-mode 1))
-(use-package company-prescient
-  :after company prescient
-  :config
-  (company-prescient-mode 1))
-(use-package company-posframe
-  :config
-  (company-posframe-mode 1))
-#+end_src
-
-** Magit
-[[https://github.com/magit/magit][magit]] is a magic UI for dealing with git. The keybinds are intuitive, and it pops up suggestion a-la =which-key= if you aren't sure what button to  press next.
-
-#+begin_src emacs-lisp
-(use-package magit
-  :general
-  (leader-def
-    "g"  '(:ignore t :wk "git")
-    "gs" '(magit :wk "git status")
-    "gg" '(magit :wk "git status")))
-#+end_src
-
-We pair it with [[https://github.com/alphapapa/magit-todos][magit-todos]] which shows any =TODO=, =FIXME=, =XXX=, =BUG=, etc. comments in the codebase.
-
-#+begin_src emacs-lisp
-(use-package magit-todos
-  :after magit
-  :custom
-  (magit-todos-nice nil)
-  :config
-  (magit-todos-mode 1))
-#+end_src
-
-[[https://github.com/dandavison/magit-delta][magit-delta]] improves the coloring of diffs in magit using [[https://github.com/dandavison/delta][delta]].
-
-#+begin_src emacs-lisp
-(use-package magit-delta
-  :if *is-unix*
-  :custom
-  (magit-delta-default-dark-theme "Dracula")
-  :config
-  (magit-delta-mode 1))
-#+end_src
-
-** Projectile
-[[https://github.com/bbatsov/projectile][projectile]] teaches Emacs to be aware of different ways a "project" folder can be recognized, and enables easy jumping and using of multiple projects in the same instance of emacs.
-
-#+begin_src emacs-lisp
-(defun my/expand-git-project-dirs (root)
-  "Return a list of all project directories 2 levels deep in ROOT.
-
-Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/project=, return a list of 'user' directories that are part of the ROOT."
-  (mapcan #'(lambda (d) (cddr (directory-files d t)))
-          (cddr (directory-files root t))))
-
-(use-package projectile
-  :general
-  (leader-def
-    "fp" 'projectile-find-file-dwim
-    "p" '(:ignore t :wk "project")
-    "pp" 'projectile-switch-project
-    "pf" 'projectile-find-file
-    "pd" 'projectile-dired
-    "p/" 'projectile-ripgrep)
-  :custom
-  (projectile-completion-system 'default)
-  (projectile-enable-caching t)
-  (projectile-project-search-path
-   (my/expand-git-project-dirs "~/git"))
-  (projectile-sort-order 'recently-active)
-  (projectile-indexing-method (if *is-unix* 'hybrid 'native))
-  :config
-  (projectile-mode +1)
-  (projectile-discover-projects-in-search-path))
-#+end_src
-
-** Git Gutter
-[[https://github.com/dgutov/diff-hl][diff-hl]] shows uncommitted git changes on left side of the buffer.
-
-#+begin_src emacs-lisp
-(use-package diff-hl
-  :hook
-  (dired-mode . diff-hl-dired-mode-unless-remote)
-  :config
-  (global-diff-hl-mode 1))
-#+end_src
-
-** Treemacs
-[[https://github.com/Alexander-Miller/treemacs][treemacs]] is a sidebar tree file explorer of the current directory/project.
-=evil=, =projectile=, and =magit= integration is enabled.
-
-#+begin_src emacs-lisp
-(use-package treemacs
-  :general
-  (leader-def
-    "tt" 'treemacs
-    "tf" 'treemacs-find-file))
-(use-package treemacs-evil
-  :after treemacs evil)
-(use-package treemacs-projectile
-  :after treemacs projectile)
-(use-package treemacs-magit
-  :after treemacs-magit)
 #+end_src
 
 * Interface
@@ -475,43 +360,6 @@ A good-looking tool is a pleasure to work with. Here, we try to tweak all the di
 (set-frame-parameter nil 'internal-border-width 8) ; Use them now
 #+end_src
 
-** Fonts
-The [[https://github.com/rolandwalker/unicode-fonts][unicode-fonts]] package helps Emacs use the full range of unicode characters provided by most fonts.
-
-We set a regular font and a ~variable-pitch~ one, the latter is used by ~mixed-pitch-mode~ to render regular text with a proportional font.
-
-#+begin_src emacs-lisp
-(use-package persistent-soft)
-(use-package unicode-fonts
-  :after persistent-soft
-  :config
-  (custom-set-faces
-   `(default ((t (:family ,*mono-font-family*
-                  :height ,*mono-font-height*))))
-   `(variable-pitch ((t (:family ,*serif-font-family*
-                         :height ,*serif-font-height*))))))
-#+end_src
-
-** Fast Scroll
-Always redraw immediately when scrolling, more responsive and doesn't hang! Sourced from http://emacs.stackexchange.com/a/31427/2418
-
-#+begin_src emacs-lisp
-(setq fast-but-imprecise-scrolling t
-      jit-lock-defer-time 0)
-#+end_src
-
-[[https://github.com/ahungry/fast-scroll][fast-scroll]] "works by temporarily disabling font-lock and switching to a barebones mode-line, until you stop scrolling (at which point it re-enables)". It only does this when scrolling super fast, to keep everything responsive.
-
-#+begin_src emacs-lisp
-(use-package fast-scroll
-  :hook
-  (fast-scroll-start . (lambda () (flycheck-mode -1)))
-  (fast-scroll-end . (lambda () (flycheck-mode 1)))
-  :config
-  (fast-scroll-config)
-  (fast-scroll-mode 1))
-#+end_src
-
 ** Themes
 We will load all the themes. We need to ~:defer~ them, to prevent each theme getting loaded upon init, and flashing emacs and conflicting with each other.
 
@@ -529,32 +377,26 @@ We will load all the themes. We need to ~:defer~ them, to prevent each theme get
 (use-package dracula-theme
   :defer t)
 
-(add-hook 'after-init-hook
-          #'(lambda () (load-theme 'dracula t)))
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (load-theme 'dracula t)))
 #+end_src
 
-** Mode Line
-[[https://github.com/seagle0128/doom-modeline][doom-modeline]] provides a clean and simple modeline (bottom bar) for each buffer. We pair it with the [[https://github.com/tarsius/minions][minions]] minor mode to collect all minor modes into a single menu. [[https://github.com/emacsorphanage/anzu][anzu]] is used to show the number of matches when we search in a file.
+** Fonts
+The [[https://github.com/rolandwalker/unicode-fonts][unicode-fonts]] package helps Emacs use the full range of unicode characters provided by most fonts.
+
+We set a regular font and a ~variable-pitch~ one, the latter is used by ~mixed-pitch-mode~ to render regular text with a proportional font.
 
 #+begin_src emacs-lisp
-(use-package anzu
-  :after isearch
+(use-package persistent-soft)
+(use-package unicode-fonts
+  :after persistent-soft
   :config
-  (global-anzu-mode 1))
-
-(use-package minions
-  :config
-  (minions-mode 1))
-
-(use-package doom-modeline
-  :custom
-  (inhibit-compacting-font-caches t)
-  ;; make the modeline only as tall as the font, please.
-  (doom-modeline-height 1)
-  ;; 1 minor mode will be shown thanks to minions
-  (doom-modeline-minor-modes t)
-  :config
-  (doom-modeline-mode 1))
+  (custom-set-faces
+   `(default ((t (:family ,*mono-font-family*
+                  :height ,*mono-font-height*))))
+   `(variable-pitch ((t (:family ,*serif-font-family*
+                         :height ,*serif-font-height*))))))
 #+end_src
 
 ** All The Icons
@@ -596,6 +438,29 @@ We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-d
                      (bookmarks . 5)))
   :config
   (dashboard-setup-startup-hook))
+#+end_src
+
+** Mode Line
+[[https://github.com/seagle0128/doom-modeline][doom-modeline]] provides a clean and simple modeline (bottom bar) for each buffer. We pair it with the [[https://github.com/tarsius/minions][minions]] minor mode to collect all minor modes into a single menu. [[https://github.com/emacsorphanage/anzu][anzu]] is used to show the number of matches when we search in a file.
+
+#+begin_src emacs-lisp
+(use-package anzu
+  :after isearch
+  :config
+  (global-anzu-mode 1))
+
+(use-package minions
+  :config
+  (minions-mode 1))
+
+(use-package doom-modeline
+  :custom
+  (inhibit-compacting-font-caches t)
+  (doom-modeline-height 28)
+  ;; 1 minor mode will be shown thanks to minions
+  (doom-modeline-minor-modes t)
+  :config
+  (doom-modeline-mode 1))
 #+end_src
 
 ** Tabs
@@ -674,11 +539,33 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
            (centaur-tabs-get-group-name (current-buffer))))))))
 #+end_src
 
+** Fast Scroll
+Always redraw immediately when scrolling, more responsive and doesn't hang! Sourced from http://emacs.stackexchange.com/a/31427/2418
+
+#+begin_src emacs-lisp
+(setq fast-but-imprecise-scrolling t
+      jit-lock-defer-time 0)
+#+end_src
+
+[[https://github.com/ahungry/fast-scroll][fast-scroll]] "works by temporarily disabling font-lock and switching to a barebones mode-line, until you stop scrolling (at which point it re-enables)". It only does this when scrolling super fast, to keep everything responsive.
+
+#+begin_src emacs-lisp
+(use-package fast-scroll
+  :defer 2
+  :hook
+  (fast-scroll-start . (lambda () (flycheck-mode -1)))
+  (fast-scroll-end . (lambda () (flycheck-mode 1)))
+  :config
+  (fast-scroll-config)
+  (fast-scroll-mode 1))
+#+end_src
+
 ** Wrap Long Lines
 [[https://github.com/joostkremers/visual-fill-column][visual-fill-column]] wraps lines at ~fill-column~, and makes it easier to read long lines of code. It is preferred over the built-in ~visual-line-mode~ because it doesn't break words.
 
 #+begin_src emacs-lisp
 (use-package visual-fill-column
+  :defer 2
   :hook (org-src . visual-fill-column-mode)
   :custom
   (visual-line-fringe-indicators
@@ -698,18 +585,277 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
 #+begin_src emacs-lisp
 (use-package mixed-pitch
   :after all-the-icons
+  :defer 2
   :custom
   (mixed-pitch-set-height t)
   :hook (text-mode . mixed-pitch-mode))
 #+end_src
 
-* Text Editing
+* Packages
 
-** Better Defaults
+** Helpful
+[[https://github.com/Wilfred/helpful][helpful]] makes a better Emacs =*help*= buffer, with colors and contextual information.
+
 #+begin_src emacs-lisp
-(setq fill-column 80
-      sentence-end-double-space nil)
+(use-package helpful
+  :defer 2
+  :general
+  (leader-def
+    "h" '(:ignore t :wk "help")
+    "hf" 'helpful-callable
+    "hv" 'helpful-variable
+    "hk" 'helpful-key
+    "ho" 'helpful-at-point))
 #+end_src
+
+** Info-colors
+[[https://github.com/ubolonton/info-colors][info-colors]] adds pretty Info colors.
+
+#+begin_src emacs-lisp
+(use-package info-colors
+  :defer 2
+  :config
+  (add-hook 'Info-selection-hook 'info-colors-fontify-node))
+#+end_src
+
+** Restart-emacs
+[[https://github.com/iqbalansari/restart-emacs][restart-emacs]] teaches Emacs to restart itself. I added a ~my/reload-init~ command as well to just reload the =init.el= file without a full restart.
+
+#+begin_src emacs-lisp
+(defun my/reload-init ()
+  "Reload init.el."
+  (interactive)
+  (message "Reloading init.el...")
+  (load user-init-file nil 'nomessage)
+  (message "Reloading init.el... done."))
+
+(use-package restart-emacs
+  :general
+  (leader-def
+    "q" '(:ignore t :wk "exit emacs")
+    "qR" 'restart-emacs
+    "qr" 'my/reload-init))
+#+end_src
+
+** Prescient
+[[https://github.com/raxod502/prescient.el][prescient.el]] teaches =ivy= and =company= better sorting and filtering.
+
+#+begin_src emacs-lisp
+(use-package prescient
+  :config
+  (prescient-persist-mode 1))
+#+end_src
+
+** Counsel, Ivy
+[[https://github.com/abo-abo/swiper][swiper/ivy/counsel]] is a great UI to visualize and filter lists. It sets itself up to augment most prompts to filter possible matches as you type. It's good stuff.
+
+#+begin_src emacs-lisp
+(use-package ivy
+  :defer 1
+  :custom
+  ;; add bookmarks and recentf to buffer lists
+  (ivy-use-virtual-buffers t)
+  ;; better matching method
+  (ivy-re-builders-alist '((t . ivy--regex-plus)))
+  :config
+  (ivy-mode 1))
+(use-package counsel
+  :defer 1
+  :general
+  (leader-def
+    "SPC" '(counsel-M-x :wk "M-x")
+    "f" '(:ignore t :wk "file")
+    "ff" 'counsel-find-file
+    "fr" 'counsel-buffer-or-recentf
+    "b" '(:ignore t :wk "buffer")
+    "bb" 'switch-to-buffer
+    "bd" 'kill-this-buffer
+    "bn" 'next-buffer
+    "bp" 'previous-buffer
+    "tc" 'counsel-load-theme)
+  (:states 'normal
+           "C-p"  'projectile-find-file
+           "C-S-p"  'counsel-M-x)
+  :config
+  (counsel-mode 1))
+;; better fuzzy matching.
+(use-package flx
+  :after ivy counsel)
+(use-package ivy-prescient
+  :after ivy counsel prescient
+  :config
+  (ivy-prescient-mode 1))
+;; add more information to ivy/counsel
+(use-package ivy-rich
+  :after ivy counsel all-the-icons-ivy-rich
+  :config
+  (ivy-rich-mode 1)
+  (setq ivy-initial-inputs-alist nil))
+#+end_src
+
+** Flycheck
+[[https://github.com/flycheck/flycheck][flycheck]] gathers syntax errors and warnings on-the-fly. We use [[https://github.com/alexmurray/flycheck-posframe][flycheck-posframe]] to show them if the cursor is on a flycheck warning.
+
+#+begin_src emacs-lisp
+(use-package flycheck
+  :defer 2
+  :init
+  (global-flycheck-mode t))
+(use-package flycheck-posframe
+  :after flycheck
+  :hook (flycheck-mode . flycheck-posframe-mode)
+  :config
+  (flycheck-posframe-configure-pretty-defaults)
+  (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)
+  (add-hook 'flycheck-posframe-inhibit-functions #'evil-insert-state-p)
+  (add-hook 'flycheck-posframe-inhibit-functions #'evil-replace-state-p)
+  (advice-add 'org-edit-src-exit :after #'flycheck-posframe-hide-posframe))
+#+end_src
+
+** Format All
+[[https://github.com/lassik/emacs-format-all-the-code][emacs-format-all-the-code]] knows about all the different formatters for different languuages, and tries to run them if they are installed. We configure it to format all modes that are in the ~auto-format-modes~ list on save. We well add modes to this later.
+
+#+begin_src emacs-lisp
+(defcustom auto-format-modes '()
+  "Modes to turn on format-all-mode in")
+(defcustom auto-format-dirs '()
+  "Directories to turn on format-all-mode in")
+
+(defun my/auto-format-buffer-p ()
+  (and
+   (member major-mode auto-format-modes)
+   (buffer-file-name)
+   (save-match-data
+     (let ((dir (file-name-directory (buffer-file-name))))
+       (cl-some (lambda (regexp) (string-match regexp dir))
+                auto-format-dirs)))))
+
+(defun my/maybe-format-all-mode ()
+  (format-all-mode (if (my/auto-format-buffer-p) 1 0)))
+
+(use-package format-all
+  :hook (after-change-major-mode . my/maybe-format-all-mode))
+#+end_src
+
+** Company
+[[http://company-mode.github.io/][company-mode]] gives us the standard dropdown as-you-type of modern IDEs.
+
+#+begin_src emacs-lisp
+(use-package company
+  :defer 2
+  :config
+  (global-company-mode 1))
+(use-package company-prescient
+  :after company prescient
+  :config
+  (company-prescient-mode 1))
+(use-package company-posframe
+  :after company
+  :config
+  (company-posframe-mode 1))
+#+end_src
+
+** Magit
+[[https://github.com/magit/magit][magit]] is a magic UI for dealing with git. The keybinds are intuitive, and it pops up suggestion a-la =which-key= if you aren't sure what button to  press next.
+
+#+begin_src emacs-lisp
+(use-package magit
+  :defer 2
+  :commands magit
+  :general
+  (leader-def
+    "g"  '(:ignore t :wk "git")
+    "gs" '(magit :wk "git status")
+    "gg" '(magit :wk "git status")))
+#+end_src
+
+We pair it with [[https://github.com/alphapapa/magit-todos][magit-todos]] which shows any =TODO=, =FIXME=, =XXX=, =BUG=, etc. comments in the codebase.
+
+#+begin_src emacs-lisp
+(use-package magit-todos
+  :after magit
+  :custom
+  (magit-todos-nice nil)
+  :config
+  (magit-todos-mode 1))
+#+end_src
+
+[[https://github.com/dandavison/magit-delta][magit-delta]] improves the coloring of diffs in magit using [[https://github.com/dandavison/delta][delta]].
+
+#+begin_src emacs-lisp
+(use-package magit-delta
+  :if *is-unix*
+  :after magit
+  :commands magit-delta-mode
+  :custom
+  (magit-delta-default-dark-theme "Dracula")
+  :config
+  (magit-delta-mode 1))
+#+end_src
+
+** Projectile
+[[https://github.com/bbatsov/projectile][projectile]] teaches Emacs to be aware of different ways a "project" folder can be recognized, and enables easy jumping and using of multiple projects in the same instance of emacs.
+
+#+begin_src emacs-lisp
+(defun my/expand-git-project-dirs (root)
+  "Return a list of all project directories 2 levels deep in ROOT.
+
+Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/project=, return a list of 'user' directories that are part of the ROOT."
+  (mapcan #'(lambda (d) (cddr (directory-files d t)))
+          (cddr (directory-files root t))))
+
+(use-package projectile
+  :general
+  (leader-def
+    "fp" 'projectile-find-file-dwim
+    "p" '(:ignore t :wk "project")
+    "pp" 'projectile-switch-project
+    "pf" 'projectile-find-file
+    "pd" 'projectile-dired
+    "p/" 'projectile-ripgrep)
+  :custom
+  (projectile-completion-system 'default)
+  (projectile-enable-caching t)
+  (projectile-project-search-path
+   (my/expand-git-project-dirs "~/git"))
+  (projectile-sort-order 'recently-active)
+  (projectile-indexing-method (if *is-unix* 'hybrid 'native))
+  :config
+  (projectile-mode +1))
+#+end_src
+
+** Git Gutter
+[[https://github.com/dgutov/diff-hl][diff-hl]] shows uncommitted git changes on left side of the buffer.
+
+#+begin_src emacs-lisp
+(use-package diff-hl
+  :defer 2
+  :hook
+  (dired-mode . diff-hl-dired-mode-unless-remote)
+  :config
+  (global-diff-hl-mode 1))
+#+end_src
+
+** Treemacs
+[[https://github.com/Alexander-Miller/treemacs][treemacs]] is a sidebar tree file explorer of the current directory/project.
+=evil=, =projectile=, and =magit= integration is enabled.
+
+#+begin_src emacs-lisp
+(use-package treemacs
+  :commands treemacs treemacs-find-file
+  :general
+  (leader-def
+    "tt" 'treemacs
+    "tf" 'treemacs-find-file))
+(use-package treemacs-evil
+  :after treemacs evil)
+(use-package treemacs-projectile
+  :after treemacs projectile)
+(use-package treemacs-magit
+  :after treemacs-magit)
+#+end_src
+
+* Text Editing
 
 ** Editorconfig
 [[https://github.com/editorconfig/editorconfig-emacs][editorconfig]] looks for an =.editorconfig= file, and sets indents and other coding conventions as instructed.
@@ -721,6 +867,7 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
 #+end_src
 
 ** Cleanup Trailing Whitespace
+[[https://github.com/purcell/whitespace-cleanup-mode][whitespace-cleanup-mode]] cleans up messy whitespace in a document *only* if it was clean when opening.
 
 #+begin_src emacs-lisp
 (use-package whitespace-cleanup-mode
@@ -730,20 +877,12 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
   (global-whitespace-cleanup-mode 1))
 #+end_src
 
-** Paren
-#+begin_src emacs-lisp
-(use-package paren
-  :straight (:type built-in)
-  :custom
-  (show-paren-when-point-inside-paren t)
-  :config
-  (show-paren-mode 1))
-#+end_src
-
 ** Rainbow Delimiters
+[[https://github.com/Fanael/rainbow-delimiters][rainbow-delimiters]] color brackets in various colors to easier identify them.
+
 #+begin_src emacs-lisp
 (use-package rainbow-delimiters
-  :hook (progn-mode . rainbow-delimiters-mode)
+  :hook (prog-mode . rainbow-delimiters-mode)
   :config
   (set-face-attribute 'rainbow-delimiters-unmatched-face nil
                       :foreground "red"
@@ -752,15 +891,11 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
 #+end_src
 
 ** Parinfer
+[[https://shaunlebron.github.io/parinfer/][parinfer]] is a magical way to edit lispy languages, that allows you to just focus on indentation and code layout. The brackets get inserted and adjusted automagically.
+
+We use [[https://github.com/justinbarclay/parinfer-rust-mode][parinfer-rust-mode]] most of the time, and fall back to [[https://github.com/DogLooksGood/parinfer-mode][parinfer-mode]], an pure elisp variant on Windows.
+
 #+begin_src emacs-lisp
-(use-package parinfer
-  :if *is-windows*
-  :hook
-  (emacs-lisp-mode . parinfer-mode)
-  (lisp-mode . parinfer-mode)
-  (clojure-mode . parinfer-mode)
-  :init
-  (setq parinfer-extensions '(defaults pretty-parens evil)))
 (use-package parinfer-rust-mode
   :if *is-unix*
   :hook
@@ -769,14 +904,25 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
   clojure-mode
   :custom
   (parinfer-rust-auto-download t))
+
+(use-package parinfer
+  :if *is-windows*
+  :hook
+  (emacs-lisp-mode . parinfer-mode)
+  (lisp-mode . parinfer-mode)
+  (clojure-mode . parinfer-mode)
+  :init
+  (setq parinfer-extensions '(defaults pretty-parens evil)))
 #+end_src
 
 * Org Mode
 
 ** org
+[[https://orgmode.org/][orgmode]] is a tool to organize information in plaintext documents. This configuration is using orgmode to interleave text and code.
+
 #+begin_src emacs-lisp
 (use-package org
-  :after org-superstar
+  :defer t
   :general
   (leader-def
     "o" '(:ignore t :wk "org")
@@ -792,7 +938,9 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
     "et" '(org-babel-execute-subtree :wk "execute subtree")
     "'"  '(org-edit-special :wk "edit block")
     "tt" 'counsel-org-tag
-    "tv" 'org-change-tag-in-region)
+    "tv" 'org-change-tag-in-region
+    "b" '(:ignore t :wk "babel")
+    "bt" 'org-babel-tangle)
   (:keymaps 'org-src-mode
             :definer 'minor-mode
             :states 'normal
@@ -800,19 +948,34 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
             "q"  '(org-edit-src-abort :wk "abort"))
   :custom
   (org-directory "~/Sync/org")
+  ;; use syntax-highlighting for src blocks
   (org-src-fontify-natively t)
+  ;; open another window when editing src blocks
   (org-src-window-setup 'other-window)
+  ;; strip blank lines when closing src block editor
   (org-src-strip-leading-and-trailing-blank-lines t)
+  ;; preserve indentation in src blocks, don't re-indent
   (org-src-preserve-indentation t)
+  ;; respect the src block syntax for tabs
   (org-src-tab-acts-natively t)
+  ;; wrap lines on startup
   (org-startup-truncated nil)
+  ;; if editing in an invisible region, complain.
   (org-catch-invisible-edits 'show-and-error)
+  ;; don't ask when evaluating every src block
   (org-confirm-babel-evaluate nil)
+  ;; don't hide emphasis markers, because there are soo many
   (org-hide-emphasis-markers nil)
+  ;; try to draw utf8 characters, don't just show their code
   (org-pretty-entities t)
+  ;; add a background to begin_quote and begin_verse blocks.
   (org-fontify-quote-and-verse-blocks t)
-  (org-cycle-separator-lines -1)
+  ;; use a pretty character to show a collapsed section
   (org-ellipsis " ▿")
+  ;; don't collapse blank lines when collapsing a tree
+  ;; as that messes with the ellipsis.
+  (org-cycle-separator-lines -1)
+  ;; don't align tags
   (org-tag-column 0)
   :hook (org-mode . org-indent-mode)
   :config
@@ -821,43 +984,53 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
 #+end_src
 
 ** org-superstar
+[[https://github.com/integral-dw/org-superstar-mode][org-superstar-mode]] makes prettier the headings in orgmode, with unicode bulletpoints.
+
 #+begin_src emacs-lisp
+(defun me/lightweight-superstar-mode ()
+  "Start Org Superstar differently depending on the number of lists items."
+  (let ((list-items
+         (count-matches "^[ \t]*?\\([+-*]\\|[ \t]\\*\\)"
+                        (point-min) (point-max))))
+    (unless (< list-items 100))
+    (org-superstar-toggle-lightweight-lists))
+  (org-superstar-mode 1))
+
 (use-package org-superstar
-  :after all-the-icons
+  :after all-the-icons org
+  :defer t
+  :hook (org-mode . me/lightweight-superstar-mode)
   :custom
-  (inhibit-compacting-font-caches t)
-
+  ;; draw pretty unicode heading bullets
   (org-superstar-headline-bullets-list '("⌾" "◈" "⚬" "▷"))
-
+  ;; don't hide leading stars
   (org-hide-leading-stars nil)
+  ;; replace them with spaces!
   (org-superstar-leading-bullet ?\s)
-
+  ;; draw pretty todo items
   (org-superstar-special-todo-items t)
-
-  (org-superstar-prettify-item-bullets t)
-  :hook
-  (org-mode . me/auto-lightweight-mode)
-  :config
-  (defun me/auto-lightweight-mode ()
-    "Start Org Superstar differently depending on the number of lists items."
-    (let ((list-items
-           (count-matches "^[ \t]*?\\([+-*]\\|[ \t]\\*\\)"
-                          (point-min) (point-max))))
-      (unless (< list-items 100))
-      (org-superstar-toggle-lightweight-lists))
-    (org-superstar-mode 1)))
+  ;; draw pretty unicode list bullets
+  (org-superstar-prettify-item-bullets t))
 #+end_src
 
 ** org-clock
-Track time spent on tasks in org-mode.
+Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502/radian][raxod502/radian]] emacs config, we lazy-load org-clock, as ~org-clock-load~ and ~org-clock-save~ tend to cause a second or two delay.
+
 #+begin_src emacs-lisp
-(use-feature org-clock
+(use-package org-clock
+  :straight nil
   :after org
+  :defer t
   :custom
+  ;; resume clock when clocking into a task with an open clock
   (org-clock-in-resume t)
+  ;; don't keep empty clock-times, usually made in error
   (org-clock-out-remove-zero-time-clocks t)
+  ;; include the task in the clock report
   (org-clock-report-include-clocking-task t)
+  ;; only auto-resolve clocks when theres no ongoing clock
   (org-clock-auto-clock-resolution 'when-no-clock-is-running)
+  ;; save the running clock when emacs closes
   (org-clock-persist t)
   :general
   (localleader-def
@@ -868,30 +1041,29 @@ Track time spent on tasks in org-mode.
     "cf" 'org-clock-goto
     "cq" 'org-clock-cancel
     "cc" 'org-clock-in-last)
-  ;; lazy-load org-clock, as it slows down init quite a bit.
-  ;; source: https://github.com/raxod502/radian
-  :commands org-clock-load org-clock-save
-  :init
-  ;; Allow clock data to be saved persistently.
-  (setq org-clock-persist t)
-
-  ;; Actually enable clock persistence. This is taken from
-  ;; `org-clock-persistence-insinuate', but we can't use that function
-  ;; since it causes both `org' and `org-clock' to be loaded for no
-  ;; good reason.
-  (add-hook 'org-mode-hook #'org-clock-load)
-  (add-hook 'kill-emacs-hook #'org-clock-save)
-
+  :commands
+  org-clock-in
+  org-clock-out
+  org-clock-goto
+  org-clock-cancel
+  org-clock-in-last
+  org-clock-load
+  org-clock-save
+  :hook
+  ;; lazy-load org-clock-persistence-insinuate,
+  ;; as it slows down init quite a bit.
+  ;; source:
+  (org-mode . org-clock-load)
+  (kill-emacs-hook . (lambda ()
+                         (when (featurep 'org-clock)
+                           (org-clock-save))))
   :config
-  (dolist (fun '(org-clock-in
-                 org-clock-out
-                 org-clock-in-last
-                 org-clock-goto
-                 org-clock-cancel))
-    (advice-add fun :before #'org-clock-load)))
+  (org-clock-load))
 #+end_src
 
 ** org-projectile
+[[https://github.com/IvanMalison/org-projectile][org-projectile]] creates a per-project org file, and adds some convenience functions to make it easy to jump to.
+
 #+begin_src emacs-lisp
 (use-package org-projectile
   :after projectile org
@@ -968,9 +1140,76 @@ Track time spent on tasks in org-mode.
 #+begin_src emacs-lisp
 (use-package clojure-mode)
 
+(use-package cider
+  :defer t
+  :hook (clojure-mode . cider-mode))
+
 (use-package clj-refactor
+  :after cider
   :hook (clojure-mode . clj-refactor-mode))
 
-(use-package cider
-  :hook (clojure-mode . cider-mode))
+#+end_src
+
+* Appendix
+
+** Tangle Emacs config on save
+[[https://github.com/rememberYou/.emacs.d/blob/master/config.org][Source]]
+
+#+begin_src emacs-lisp
+(use-package async)
+
+(defvar *config-file* (expand-file-name "config.org" user-emacs-directory)
+  "The configuration file.")
+
+(defvar *config-last-change* (nth 5 (file-attributes *config-file*))
+  "Last modification time of the configuration file.")
+
+(defvar *show-async-tangle-results* nil
+  "Keeps *emacs* async buffers around for later inspection.")
+
+(defun my/config-updated ()
+  "Checks if the configuration file has been updated since the last time."
+  (time-less-p *config-last-change*
+               (nth 5 (file-attributes *config-file*))))
+
+(defun my/async-babel-tangle (org-file)
+  "Tangles the org file asynchronously."
+  (let ((init-tangle-start-time (current-time))
+        (file (buffer-file-name))
+        (async-quiet-switch "-q"))
+    (async-start
+     `(lambda ()
+        (require 'ob-tangle)
+        (org-babel-tangle-file ,org-file))
+     (unless *show-async-tangle-results*
+       `(lambda (result)
+          (if result
+              (message "SUCCESS: %s successfully tangled (%.2fs)."
+                       ,org-file
+                       (float-time
+                        (time-subtract (current-time)
+                                       ',init-tangle-start-time)))
+            (message "ERROR: %s as tangle failed." ,org-file)))))))
+
+(defun my/config-tangle ()
+  "Tangles the org file asynchronously."
+  (when (my/config-updated)
+    (setq *config-last-change*
+          (nth 5 (file-attributes *config-file*)))
+    (my/async-babel-tangle *config-file*)))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (when (equal (expand-file-name buffer-file-truename)
+                         ,*config-file*)
+              (add-hook 'after-save-hook
+                        'my/config-tangle
+                        nil 'make-it-local))))
+#+end_src
+
+#+begin_src emacs-lisp
+;; Local Variables:
+;; flycheck-disabled-checkers: (emacs-lisp-checkdoc)
+;; byte-compile-warnings: (not free-vars)
+;; End:
 #+end_src
