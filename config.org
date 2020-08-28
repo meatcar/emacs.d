@@ -619,10 +619,10 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 #+end_src
 
 ** Restart-emacs
-[[https://github.com/iqbalansari/restart-emacs][restart-emacs]] teaches Emacs to restart itself. I added a ~my/reload-init~ command as well to just reload the =init.el= file without a full restart.
+[[https://github.com/iqbalansari/restart-emacs][restart-emacs]] teaches Emacs to restart itself. I added a ~me/reload-init~ command as well to just reload the =init.el= file without a full restart.
 
 #+begin_src emacs-lisp
-(defun my/reload-init ()
+(defun me/reload-init ()
   "Reload init.el."
   (interactive)
   (message "Reloading init.el...")
@@ -634,7 +634,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (leader-def
     "q" '(:ignore t :wk "exit emacs")
     "qR" 'restart-emacs
-    "qr" 'my/reload-init))
+    "qr" 'me/reload-init))
 #+end_src
 
 ** Prescient
@@ -721,7 +721,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 (defcustom auto-format-dirs '()
   "Directories to turn on format-all-mode in")
 
-(defun my/auto-format-buffer-p ()
+(defun me/auto-format-buffer-p ()
   (and
    (member major-mode auto-format-modes)
    (buffer-file-name)
@@ -730,11 +730,11 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
        (cl-some (lambda (regexp) (string-match regexp dir))
                 auto-format-dirs)))))
 
-(defun my/maybe-format-all-mode ()
-  (format-all-mode (if (my/auto-format-buffer-p) 1 0)))
+(defun me/maybe-format-all-mode ()
+  (format-all-mode (if (me/auto-format-buffer-p) 1 0)))
 
 (use-package format-all
-  :hook (after-change-major-mode . my/maybe-format-all-mode))
+  :hook (after-change-major-mode . me/maybe-format-all-mode))
 #+end_src
 
 ** Company
@@ -797,7 +797,7 @@ We pair it with [[https://github.com/alphapapa/magit-todos][magit-todos]] which 
 [[https://github.com/bbatsov/projectile][projectile]] teaches Emacs to be aware of different ways a "project" folder can be recognized, and enables easy jumping and using of multiple projects in the same instance of emacs.
 
 #+begin_src emacs-lisp
-(defun my/expand-git-project-dirs (root)
+(defun me/expand-git-project-dirs (root)
   "Return a list of all project directories 2 levels deep in ROOT.
 
 Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/project=, return a list of 'user' directories that are part of the ROOT."
@@ -817,7 +817,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   (projectile-completion-system 'default)
   (projectile-enable-caching t)
   (projectile-project-search-path
-   (my/expand-git-project-dirs "~/git"))
+   (me/expand-git-project-dirs "~/git"))
   (projectile-sort-order 'recently-active)
   (projectile-indexing-method (if *is-unix* 'hybrid 'native))
   :config
@@ -1169,12 +1169,12 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (defvar *show-async-tangle-results* nil
   "Keeps *emacs* async buffers around for later inspection.")
 
-(defun my/config-updated ()
+(defun me/config-updated ()
   "Checks if the configuration file has been updated since the last time."
   (time-less-p *config-last-change*
                (nth 5 (file-attributes *config-file*))))
 
-(defun my/async-babel-tangle (org-file)
+(defun me/async-babel-tangle (org-file)
   "Tangles the org file asynchronously."
   (let ((init-tangle-start-time (current-time))
         (file (buffer-file-name))
@@ -1193,19 +1193,19 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
                                        ',init-tangle-start-time)))
             (message "ERROR: %s as tangle failed." ,org-file)))))))
 
-(defun my/config-tangle ()
+(defun me/config-tangle ()
   "Tangles the org file asynchronously."
-  (when (my/config-updated)
+  (when (me/config-updated)
     (setq *config-last-change*
           (nth 5 (file-attributes *config-file*)))
-    (my/async-babel-tangle *config-file*)))
+    (me/async-babel-tangle *config-file*)))
 
 (add-hook 'org-mode-hook
           (lambda ()
             (when (equal (expand-file-name buffer-file-truename)
                          ,*config-file*)
               (add-hook 'after-save-hook
-                        'my/config-tangle
+                        'me/config-tangle
                         nil 'make-it-local))))
 #+end_src
 
