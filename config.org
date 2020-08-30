@@ -101,15 +101,10 @@ Then, we want to enable debugging whenever we encounter an error.
 (setq debug-on-error t)
 #+end_src
 
-We want to Emacs to not ask us when trying to open a symlink.
-
-#+begin_src emacs-lisp
-(setq vc-follow-symlinks t)
-#+end_src
-
 Now, let's fetch =straight.el=.
 
 #+begin_src emacs-lisp
+(setq vc-follow-symlinks t)
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -122,6 +117,7 @@ Now, let's fetch =straight.el=.
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
+(setq vc-follow-symlinks 'ask) ; restore default
 #+end_src
 
 Let's load an optional package which gives us some convenience functions, like ~straight-x-clean-unused-repo~ to remove any packages we don't have configured anymore.
@@ -181,37 +177,45 @@ Let's define some constants we use throughout our config.
   (if *is-windows* 110 100))
 #+end_src
 
-** General settings
-Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does, but we use [[https://github.com/hrs/sensible-defaults.el][sensible-defaults.el]] in emacs.
+** Make Emacs Sensible
+Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does, but we use [[https://git.sr.ht/~technomancy/better-defaults][better-defaults]] in emacs. But it doesn't do everything, so we need to help it out.
 
 #+BEGIN_SRC emacs-lisp
-(use-package sensible-defaults
-  :config
-  (sensible-defaults/use-all-settings))
+(use-package better-defaults)
 
-(setq confirm-kill-emacs nil ; unset from sensible-defaults
-      custom-safe-themes t ; all themes we install are safe
+(setq default-directory "~/"
+      ;; always follow symlinks when opening files
+      vc-follow-symlinks t
+      ;; overwrite text when selected, like we expect.
+      delete-seleciton-mode t
+      ;; quiet startup
+      inhibit-startup-message t
+      initial-scratch-message nil
+      ;; hopefully all themes we install are safe
+      custom-safe-themes t
+      ;; simple lock/backup file management
       create-lockfiles nil
-      confirm-kill-processes nil
       backup-by-copying t
-      require-final-newline t
       delete-old-versions t
+      ;; when quiting emacs, just kill processes
+      confirm-kill-processes nil
+      ;; ask if local variables are safe once.
       enable-local-variables :safe)
 
-;; Hide Scroll bar,menu bar, tool bar
-(scroll-bar-mode -1)
-(tool-bar-mode -1)
-(menu-bar-mode -1)
+;; use human-readable sizes in dired
+(setq-default dired-listing-switches "-alh")
 
-;; save where you were when you last edited some file
-(save-place-mode 1)
+;; life is too short to type yes or no
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+;; always highlight code
+(global-font-lock-mode 1)
+;; refresh a buffer if changed on disk
+(global-auto-revert-mode 1)
 
 ;; save window layout & buffers
 ;; (setq desktop-restore-eager 5)
 ;; (desktop-save-mode 1)
-
-;; let's not use tabs for indenting by default
-(setq-default indent-tabs-mode nil)
 #+END_SRC
 
 ** UTF-8 by Default
@@ -856,6 +860,21 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 #+end_src
 
 * Text Editing
+
+** Make Text Editing Sensible
+Emacs has some cool features built-in that make editing text nice. Let's turn them on.
+
+#+begin_src emacs-lisp
+;; treat camel-cased words as individual words.
+(add-hook 'prog-mode-hook 'subword-mode)
+;; don't assume sentences end with two spaces after a period.
+(setq sentence-end-double-space nil)
+;; show matching parens
+(show-paren-mode t)
+(setq show-paren-delay 0.0)
+;; limit files to 80 columns. Controversial, I know.
+(setq-default fill-column 80)
+#+end_src
 
 ** Editorconfig
 [[https://github.com/editorconfig/editorconfig-emacs][editorconfig]] looks for an =.editorconfig= file, and sets indents and other coding conventions as instructed.
