@@ -193,6 +193,7 @@ Let's define some constants we use throughout our config.
   (if *is-windows* "Georgia" "IBM Plex Serif"))
 (defconst *serif-font-height*
   (if *is-windows* 110 100))
+(defconst *project-dir* (expand-file-name "~/git"))
 #+end_src
 
 ** Make Emacs Sensible
@@ -838,8 +839,9 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :custom
   (projectile-completion-system 'default)
   (projectile-enable-caching t)
-  (projectile-project-search-path
-   (me/expand-git-project-dirs "~/git"))
+  (if (file-directory-p *project-dir*)
+      (projectile-project-search-path)
+      (me/expand-git-project-dirs *project-dir*))
   (projectile-sort-order 'recently-active)
   (projectile-indexing-method (if *is-unix* 'hybrid 'native))
   :config
