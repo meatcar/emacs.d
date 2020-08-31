@@ -1,4 +1,4 @@
-#+STARTUP: content
+#+STARTUP: fold
 #+babel: :cache yes
 #+PROPERTY: header-args :results silent :tangle init.el
 
