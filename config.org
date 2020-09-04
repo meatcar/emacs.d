@@ -738,8 +738,16 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 (use-package ivy-rich
   :after ivy counsel all-the-icons-ivy-rich
   :config
+  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
   (ivy-rich-mode 1)
   (setq ivy-initial-inputs-alist nil))
+
+(use-package ivy-posframe
+  :after ivy counsel
+  :config
+  (setq ivy-posframe-display-functions-alist
+        '((t . ivy-posframe-display-at-frame-top-center)))
+  (ivy-posframe-mode 1))
 #+end_src
 
 ** Flycheck
