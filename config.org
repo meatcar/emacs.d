@@ -913,6 +913,25 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :after treemacs-magit)
 #+end_src
 
+** Eshell
+#+begin_src emacs-lisp
+(use-package company-fish
+  :if (executable-find "fish")
+  :straight (:host github :repo "CeleritasCelery/company-fish")
+  :after company
+  :hook
+  (shell-mode . company-mode)
+  (eshell-mode . company-mode)
+  :config
+  (add-to-list 'company-backends 'company-fish))
+
+(use-package eshell-syntax-highlighting
+  :straight (:host github :repo "akreisher/eshell-syntax-highlighting")
+  :after esh-mode
+  :config
+  (eshell-syntax-highlighting-enable))
+#+end_src
+
 * Text Editing
 
 ** Make Text Editing Sensible
