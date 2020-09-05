@@ -187,7 +187,7 @@ Let's define some constants we use throughout our config.
 
 ;; fonts
 (defconst *mono-font-family*
-  (if *is-windows* "JetBrainsMono NF" "Go Mono"))
+  (if *is-windows* "JetBrainsMono NF" "GoMono Nerd Font"))
 (defconst *mono-font-height*
   (if *is-windows* 90 90))
 (defconst *serif-font-family*
