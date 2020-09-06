@@ -650,6 +650,28 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (global-ligature-mode t))
 #+end_src
 
+** Solaire mode
+[[https://github.com/hlissner/emacs-solaire-mode][solaire-mode]] darkens non-important buffers, to help you focus on what matters.
+
+#+begin_src emacs-lisp
+;; A more complex, more lazy-loaded config
+(use-package solaire-mode
+  :hook
+  ;; Ensure solaire-mode is running in all solaire-mode buffers
+  (change-major-mode . turn-on-solaire-mode)
+  ;; ...if you use auto-revert-mode, this prevents solaire-mode from turning
+  ;; itself off every time Emacs reverts the file
+  (after-revert . turn-on-solaire-mode)
+  ;; To enable solaire-mode unconditionally for certain modes:
+  (ediff-prepare-buffer . solaire-mode)
+  ;; Highlight the minibuffer when it is activated:
+  (minibuffer-setup . solaire-mode-in-minibuffer)
+  :custom
+  (solaire-mode-auto-swap-bg t)
+  :config
+  (solaire-global-mode +1))
+#+end_src
+
 * Packages
 
 ** Helpful
