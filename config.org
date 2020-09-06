@@ -896,12 +896,8 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 (use-package projectile
   :general
   (leader-def
-    "fp" 'projectile-find-file-dwim
     "p" '(:ignore t :wk "project")
-    "pp" 'projectile-switch-project
-    "pf" 'projectile-find-file
-    "pd" 'projectile-dired
-    "p/" 'projectile-ripgrep)
+    "pd" 'projectile-dired)
   :custom
   (projectile-completion-system 'default)
   (projectile-enable-caching t)
@@ -912,6 +908,16 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   (projectile-indexing-method (if *is-unix* 'hybrid 'native))
   :config
   (projectile-mode +1))
+
+(use-package counsel-projectile
+  :after counsel projectile
+  :general
+  (leader-def
+    "pp" 'counsel-projectile-switch-project
+    "pb" 'counsel-projectile-switch-to-buffer
+    "fp" 'counsel-projectile-find-file-dwim
+    "pf" 'counsel-projectile-find-file-dwim
+    "p/" 'counsel-projectile-rg))
 #+end_src
 
 ** Git Gutter
