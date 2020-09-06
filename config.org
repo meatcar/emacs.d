@@ -1244,6 +1244,11 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
   :hook (clojure-mode . clj-refactor-mode))
 #+end_src
 
+** Pug
+#+begin_src emacs-lisp
+(use-package pug-mode)
+#+end_src
+
 * Appendix
 
 ** Tangle Emacs config on save
