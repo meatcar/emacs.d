@@ -855,7 +855,9 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (leader-def
     "g"  '(:ignore t :wk "git")
     "gs" '(magit :wk "git status")
-    "gg" '(magit :wk "git status")))
+    "gg" '(magit :wk "git status"))
+  :custom
+  (magit-repository-directories `((,*project-dir* . 3))))
 #+end_src
 
 We pair it with [[https://github.com/alphapapa/magit-todos][magit-todos]] which shows any =TODO=, =FIXME=, =XXX=, =BUG=, etc. comments in the codebase.
@@ -907,6 +909,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   (projectile-sort-order 'recently-active)
   (projectile-indexing-method (if *is-unix* 'hybrid 'native))
   :config
+  (projectile-save-known-projects)
   (projectile-mode +1))
 
 (use-package counsel-projectile
