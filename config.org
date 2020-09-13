@@ -968,6 +968,13 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :after esh-mode
   :config
   (eshell-syntax-highlighting-enable))
+
+(use-package em-smart
+  :straight (:type built-in)
+  :custom
+  (eshell-where-to-jump 'begin)
+  (eshell-review-quick-commands nil)
+  (eshell-smart-space-goes-to-end t))
 #+end_src
 
 * Text Editing
