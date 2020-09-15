@@ -864,6 +864,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
     "bd" 'kill-this-buffer
     "bn" 'next-buffer
     "bp" 'previous-buffer
+    "bx" 'kill-buffer-and-window
     "tc" 'counsel-load-theme)
   (:states 'normal
            "C-p"  'projectile-find-file
@@ -1017,7 +1018,8 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :general
   (leader-def
     "p" '(:ignore t :wk "project")
-    "pd" 'projectile-dired)
+    "pd" 'projectile-dired
+    "pt" 'projectile-run-vterm)
   :custom
   (projectile-completion-system 'default)
   (projectile-enable-caching t)
@@ -1106,6 +1108,23 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   (eshell-smart-space-goes-to-end t))
 #+end_src
 
+** Vterm
+#+begin_src emacs-lisp
+(use-package eterm-256color
+  :hook (term-mode . eterm-256color-mode))
+
+(use-package vterm
+  :straight nil
+  :commands vterm vterm-other-window
+  :custom
+  (vterm-term-environment-variable "eterm-color")
+  :config
+  (add-to-list 'display-buffer-alist
+               '("*?vterm"
+                 (display-buffer-reuse-mode-window
+                  display-buffer-pop-up-window))))
+#+end_src
+
 * Text Editing
 
 ** Make Text Editing Sensible
@@ -1137,8 +1156,19 @@ Emacs has some cool features built-in that make editing text nice. Let's turn th
 [[https://github.com/purcell/whitespace-cleanup-mode][whitespace-cleanup-mode]] cleans up messy whitespace in a document *only* if it was clean when opening.
 
 #+begin_src emacs-lisp
+(defun me/hide-trailing-whitespace ()
+  (setq show-trailing-whitespace nil))
+
 (use-package whitespace-cleanup-mode
-  :defer 1
+  :demand t
+  :hook
+  (special-mode     . me/hide-trailing-whitespace)
+  (comint-mode      . me/hide-trailing-whitespace)
+  (compilation-mode . me/hide-trailing-whitespace)
+  (term-mode        . me/hide-trailing-whitespace)
+  (vterm-mode       . me/hide-trailing-whitespace)
+  (shell-mode       . me/hide-trailing-whitespace)
+  (minibuffer-setup . me/hide-trailing-whitespace)
   :custom
   (show-trailing-whitespace t)
   :config
