@@ -483,6 +483,7 @@ We set a regular font and a ~variable-pitch~ one, the latter is used by ~mixed-p
 (use-package unicode-fonts
   :after persistent-soft
   :config
+  (unicode-fonts-setup)
   (custom-set-faces
    `(default ((t (:family ,*mono-font-family*
                   :height ,*mono-font-height*))))
