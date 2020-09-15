@@ -377,6 +377,16 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
   :after evil
   :config
   (global-evil-surround-mode 1))
+(use-package evil-lion
+  :commands evil-lion-left evil-lion-right
+  :after evil
+  :general
+  (:states 'normal
+           "ga"  'evil-lion-left
+           "gA"  'evil-lion-right)
+  (:states 'visual
+           "ga"  'evil-lion-left
+           "gA"  'evil-lion-right))
 (use-package evil-org
   :demand t
   :after evil org
