@@ -136,7 +136,7 @@ First, we configure some settings for =staight.el= to better integrate with =use
 
 #+begin_src emacs-lisp
 (setq straight-use-package-by-default t
-      use-package-always-demand t
+      use-package-always-defer t
       straight-cache-autoloads t
       straight-vc-git-default-clone-depth 1
       vc-follow-symlinks t)
@@ -258,7 +258,8 @@ Let's define some constants we use throughout our config.
 Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does, but we use [[https://git.sr.ht/~technomancy/better-defaults][better-defaults]] in emacs. But it doesn't do everything, so we need to help it out.
 
 #+BEGIN_SRC emacs-lisp
-(use-package better-defaults)
+(use-package better-defaults
+  :demand t)
 
 (setq default-directory "~/"
       ;; always follow symlinks when opening files
@@ -317,6 +318,7 @@ Emacs is very conservative about assuming encoding. Everything is utf-8 these da
 We also set ~custom-file~ to be within one of these new nice directories, so Emacs doesn't keep chaging =init.el= and messing with our git workflow.
 #+begin_src emacs-lisp
 (use-package no-littering
+  :demand t
   :config
   (setq
    auto-save-file-name-transforms
@@ -331,6 +333,7 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
 
 #+begin_src emacs-lisp
 (use-package which-key
+  :demand t
   :after evil
   :custom
   (which-key-allow-evil-operators t)
@@ -348,7 +351,7 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
 
 #+BEGIN_SRC emacs-lisp
 (use-package evil
-  :defer 1
+  :demand t
   :init
   (setq evil-want-integration t
         evil-want-keybinding nil
@@ -360,18 +363,22 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
   :config
   (evil-mode 1))
 (use-package evil-collection
+  :demand t
   :after evil
   :config
   (evil-collection-init))
 (use-package evil-commentary
+  :demand t
   :after evil
   :config
   (evil-commentary-mode 1))
 (use-package evil-surround
+  :demand t
   :after evil
   :config
   (global-evil-surround-mode 1))
 (use-package evil-org
+  :demand t
   :after evil org
   :hook (org-mode . evil-org-mode)
   :config
@@ -379,6 +386,7 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
 (use-package evil-magit
+  :demand t
   :after evil magit)
 #+END_SRC
 
@@ -389,6 +397,7 @@ We will define two "leader maps", similar to vim's =<leader>= and =<localleader>
 
 #+begin_src emacs-lisp
 (use-package general
+  :demand t
   :config
   (general-evil-setup t)
   (general-create-definer leader-def
@@ -489,8 +498,10 @@ The [[https://github.com/rolandwalker/unicode-fonts][unicode-fonts]] package hel
 We set a regular font and a ~variable-pitch~ one, the latter is used by ~mixed-pitch-mode~ to render regular text with a proportional font.
 
 #+begin_src emacs-lisp
-(use-package persistent-soft)
+(use-package persistent-soft
+  :demand t)
 (use-package unicode-fonts
+  :demand t
   :after persistent-soft
   :config
   (unicode-fonts-setup)
@@ -507,17 +518,25 @@ We set a regular font and a ~variable-pitch~ one, the latter is used by ~mixed-p
 We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-dired]] to show them in =dired=, [[https://github.com/Alexander-Miller/treemacs/blob/master/src/extra/treemacs-all-the-icons.el][treemacs-all-the-icons]] to show them in =treemacs=, [[https://github.com/asok/all-the-icons-ivy][all-the-icons-ivy]] to show them in =ivy=, and [[https://github.com/seagle0128/all-the-icons-ivy-rich][all-the-icons-ivy-rich]] to show them in =ivy-rich=.
 
 #+begin_src emacs-lisp
-(use-package all-the-icons)
+(use-package all-the-icons
+  :demand t)
 (use-package all-the-icons-dired
+  :defer 1
+  :after all-the-icons
   :hook (dired-mode . all-the-icons-dired-mode))
 (use-package treemacs-all-the-icons
-  :after treemacs
+  :defer 1
+  :after all-the-icons treemacs
   :config
   (treemacs-load-theme "all-the-icons"))
 (use-package all-the-icons-ivy
+  :defer 1
+  :after all-the-icons
   :config
   (all-the-icons-ivy-setup))
 (use-package all-the-icons-ivy-rich
+  :defer 1
+  :after all-the-icons
   :config
   (all-the-icons-ivy-rich-mode 1))
 #+end_src
@@ -527,6 +546,7 @@ We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-d
 
 #+begin_src emacs-lisp
 (use-package dashboard
+  :demand t
   :after all-the-icons projectile
   :custom
   ;; show in `emacsclient -c`
@@ -547,15 +567,18 @@ We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-d
 
 #+begin_src emacs-lisp
 (use-package anzu
+  :defer 1
   :after isearch
   :config
   (global-anzu-mode 1))
 
 (use-package minions
+  :defer 1
   :config
   (minions-mode 1))
 
 (use-package doom-modeline
+  :demand t
   :custom
   (inhibit-compacting-font-caches t)
   (doom-modeline-height 28)
@@ -572,6 +595,7 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
 
 #+begin_src emacs-lisp
 (use-package centaur-tabs
+  :defer 1
   :after all-the-icons
   :general
   (:states 'normal
@@ -653,7 +677,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 
 #+begin_src emacs-lisp
 (use-package fast-scroll
-  :defer 2
+  :defer 1
   :hook
   (fast-scroll-start . (lambda () (flycheck-mode -1)))
   (fast-scroll-end . (lambda () (flycheck-mode 1)))
@@ -667,7 +691,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 
 #+begin_src emacs-lisp
 (use-package visual-fill-column
-  :defer 2
+  :defer 1
   :hook (org-src . visual-fill-column-mode)
   :custom
   (visual-line-fringe-indicators
@@ -687,7 +711,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 #+begin_src emacs-lisp
 (use-package mixed-pitch
   :after all-the-icons
-  :defer 2
+  :defer 1
   :custom
   (mixed-pitch-set-height t)
   :hook (text-mode . mixed-pitch-mode))
@@ -697,6 +721,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 #+begin_src emacs-lisp
 (use-package ligature
   :straight (:host github :repo "mickeynp/ligature.el")
+  :defer 1
   :config
   (ligature-set-ligatures 't '("www"))
   (ligature-set-ligatures
@@ -724,6 +749,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 #+begin_src emacs-lisp
 ;; A more complex, more lazy-loaded config
 (use-package solaire-mode
+  :defer 1
   :hook
   ;; Ensure solaire-mode is running in all solaire-mode buffers
   (change-major-mode . turn-on-solaire-mode)
@@ -747,7 +773,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 
 #+begin_src emacs-lisp
 (use-package helpful
-  :defer 2
+  :defer 1
   :general
   (leader-def
     "h" '(:ignore t :wk "help")
@@ -767,7 +793,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 
 #+begin_src emacs-lisp
 (use-package info-colors
-  :defer 2
+  :defer 1
   :config
   (add-hook 'Info-selection-hook 'info-colors-fontify-node))
 #+end_src
@@ -784,6 +810,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (message "Reloading init.el... done."))
 
 (use-package restart-emacs
+  :commands restart-emacs
   :general
   (leader-def
     "q" '(:ignore t :wk "exit emacs")
@@ -796,6 +823,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 
 #+begin_src emacs-lisp
 (use-package prescient
+  :defer 1
   :config
   (prescient-persist-mode 1))
 #+end_src
@@ -834,13 +862,16 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (counsel-mode 1))
 ;; better fuzzy matching.
 (use-package flx
+  :defer 1
   :after ivy counsel)
 (use-package ivy-prescient
+  :defer 1
   :after ivy counsel prescient
   :config
   (ivy-prescient-mode 1))
 ;; add more information to ivy/counsel
 (use-package ivy-rich
+  :defer 1
   :after ivy counsel all-the-icons-ivy-rich
   :config
   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
@@ -848,6 +879,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (setq ivy-initial-inputs-alist nil))
 
 (use-package ivy-posframe
+  :defer 1
   :after ivy counsel
   :config
   (setq ivy-posframe-display-functions-alist
@@ -860,10 +892,11 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 
 #+begin_src emacs-lisp
 (use-package flycheck
-  :defer 2
+  :defer 1
   :init
   (global-flycheck-mode t))
 (use-package flycheck-posframe
+  :defer 1
   :after flycheck
   :hook (flycheck-mode . flycheck-posframe-mode)
   :config
@@ -896,6 +929,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (format-all-mode (if (me/auto-format-buffer-p) 1 0)))
 
 (use-package format-all
+  :commands format-all-mode
   :hook (after-change-major-mode . me/maybe-format-all-mode))
 #+end_src
 
@@ -904,14 +938,16 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 
 #+begin_src emacs-lisp
 (use-package company
-  :defer 2
+  :defer 1
   :config
   (global-company-mode 1))
 (use-package company-prescient
+  :defer 1
   :after company prescient
   :config
   (company-prescient-mode 1))
 (use-package company-posframe
+  :defer 1
   :after company
   :config
   (company-posframe-mode 1))
@@ -922,7 +958,6 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 
 #+begin_src emacs-lisp
 (use-package magit
-  :defer 2
   :commands magit
   :general
   (leader-def
@@ -938,10 +973,10 @@ We pair it with [[https://github.com/alphapapa/magit-todos][magit-todos]] which 
 #+begin_src emacs-lisp
 (use-package magit-todos
   :after magit
+  :commands magit-todos-list magit-todos-mode
   :custom
   (magit-todos-nice nil)
-  :config
-  (magit-todos-mode 1))
+  :hook (magit-mode . magit-todos-mode))
 #+end_src
 
 [[https://github.com/dandavison/magit-delta][magit-delta]] improves the coloring of diffs in magit using [[https://github.com/dandavison/delta][delta]].
@@ -953,8 +988,7 @@ We pair it with [[https://github.com/alphapapa/magit-todos][magit-todos]] which 
   :commands magit-delta-mode
   :custom
   (magit-delta-default-dark-theme "Dracula")
-  :config
-  (magit-delta-mode 1))
+  :hook (magit-mode . magit-delta-mode))
 #+end_src
 
 ** Projectile
@@ -969,6 +1003,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
           (cddr (directory-files root t))))
 
 (use-package projectile
+  :demand t
   :general
   (leader-def
     "p" '(:ignore t :wk "project")
@@ -986,6 +1021,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   (projectile-mode +1))
 
 (use-package counsel-projectile
+  :defer 1
   :after counsel projectile
   :general
   (leader-def
@@ -1001,7 +1037,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 
 #+begin_src emacs-lisp
 (use-package diff-hl
-  :defer 2
+  :defer 1
   :hook
   (dired-mode . diff-hl-dired-mode-unless-remote)
   :config
@@ -1014,22 +1050,27 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 
 #+begin_src emacs-lisp
 (use-package treemacs
+  :defer 2
   :commands treemacs treemacs-find-file
   :general
   (leader-def
     "tt" 'treemacs
     "tf" 'treemacs-find-file))
 (use-package treemacs-evil
+  :defer 1
   :after treemacs evil)
 (use-package treemacs-projectile
+  :defer 1
   :after treemacs projectile)
 (use-package treemacs-magit
+  :defer 1
   :after treemacs-magit)
 #+end_src
 
 ** Eshell
 #+begin_src emacs-lisp
 (use-package company-fish
+  :defer 1
   :if (executable-find "fish")
   :straight (:host github :repo "CeleritasCelery/company-fish")
   :after company
@@ -1040,12 +1081,14 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   (add-to-list 'company-backends 'company-fish))
 
 (use-package eshell-syntax-highlighting
+  :defer 1
   :straight (:host github :repo "akreisher/eshell-syntax-highlighting")
   :after esh-mode
   :config
-  (eshell-syntax-highlighting-enable))
+  (eshell-syntax-highlighting-global-mode 1))
 
 (use-package em-smart
+  :defer 1
   :straight (:type built-in)
   :custom
   (eshell-where-to-jump 'begin)
@@ -1075,6 +1118,7 @@ Emacs has some cool features built-in that make editing text nice. Let's turn th
 
 #+begin_src emacs-lisp
 (use-package editorconfig
+  :defer 1
   :config
   (editorconfig-mode 1))
 #+end_src
@@ -1084,6 +1128,7 @@ Emacs has some cool features built-in that make editing text nice. Let's turn th
 
 #+begin_src emacs-lisp
 (use-package whitespace-cleanup-mode
+  :defer 1
   :custom
   (show-trailing-whitespace t)
   :config
@@ -1095,6 +1140,7 @@ Emacs has some cool features built-in that make editing text nice. Let's turn th
 
 #+begin_src emacs-lisp
 (use-package rainbow-delimiters
+  :defer 1
   :hook (prog-mode . rainbow-delimiters-mode)
   :config
   (set-face-attribute 'rainbow-delimiters-unmatched-face nil
@@ -1110,6 +1156,7 @@ We use [[https://github.com/justinbarclay/parinfer-rust-mode][parinfer-rust-mode
 
 #+begin_src emacs-lisp
 (use-package parinfer-rust-mode
+  :defer 1
   :if *is-unix*
   :hook
   emacs-lisp-mode
@@ -1119,6 +1166,7 @@ We use [[https://github.com/justinbarclay/parinfer-rust-mode][parinfer-rust-mode
   (parinfer-rust-auto-download t))
 
 (use-package parinfer
+  :defer 1
   :if *is-windows*
   :hook
   (emacs-lisp-mode . parinfer-mode)
@@ -1135,7 +1183,6 @@ We use [[https://github.com/justinbarclay/parinfer-rust-mode][parinfer-rust-mode
 
 #+begin_src emacs-lisp
 (use-package org
-  :defer t
   :general
   (leader-def
     "o" '(:ignore t :wk "org")
@@ -1211,7 +1258,9 @@ We use [[https://github.com/justinbarclay/parinfer-rust-mode][parinfer-rust-mode
 
 (use-package org-superstar
   :after all-the-icons org
-  :defer t
+  :commands
+  org-superstar-mode
+  org-superstar-toggle-lightweight-lists
   :hook (org-mode . me/lightweight-superstar-mode)
   :custom
   ;; draw pretty unicode heading bullets
@@ -1233,7 +1282,6 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (use-package org-clock
   :straight nil
   :after org
-  :defer t
   :custom
   ;; resume clock when clocking into a task with an open clock
   (org-clock-in-resume t)
@@ -1280,6 +1328,7 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 #+begin_src emacs-lisp
 (use-package org-projectile
   :after projectile org
+  :defer 1
   :general
   (leader-def
     "po" 'org-projectile-project-todo-completing-read
@@ -1303,13 +1352,13 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 
 ** Emacs Lisp
 #+begin_src emacs-lisp
+(defun me/disable-flycheck-checkers-for-elisp ()
+  (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
+
 (use-package elisp-mode
   :straight (:type built-in)
   :hook
-  (org-src-mode . (lambda ()
-                    (setq-local
-                     flycheck-disabled-checkers
-                     '(emacs-lisp-checkdoc))))
+  (org-src-mode . me/disable-flycheck-checkers-for-elisp)
   :general
   (localleader-def
     :keymaps 'emacs-lisp-mode-map
@@ -1337,7 +1386,8 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
   (shell-mode . pretty-sha-path-mode)
   (dired-mode . pretty-sha-path-mode))
 (use-package direnv
-  :config (direnv-mode 1))
+  :config
+  (direnv-mode 1))
 #+end_src
 
 ** Markdown
@@ -1357,7 +1407,6 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (use-package clojure-mode)
 
 (use-package cider
-  :defer t
   :hook (clojure-mode . cider-mode))
 
 (use-package clj-refactor
@@ -1376,7 +1425,8 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 [[https://github.com/rememberYou/.emacs.d/blob/master/config.org][Source]]
 
 #+begin_src emacs-lisp
-(use-package async)
+(use-package async
+  :demand t)
 
 (defvar *config-file* (expand-file-name "config.org" user-emacs-directory)
   "The configuration file.")
