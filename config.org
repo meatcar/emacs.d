@@ -743,7 +743,12 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
     "hf" 'helpful-callable
     "hv" 'helpful-variable
     "hk" 'helpful-key
-    "ho" 'helpful-at-point))
+    "ho" 'helpful-at-point)
+  :config
+  (add-to-list 'display-buffer-alist
+               '("*[Hh]elp"
+                 (display-buffer-reuse-mode-window
+                  display-buffer-pop-up-window))))
 #+end_src
 
 ** Info-colors
