@@ -439,6 +439,16 @@ A good-looking tool is a pleasure to work with. Here, we try to tweak all the di
 ;; Add padding inside frames (windows)
 (add-to-list 'default-frame-alist '(internal-border-width . 8))
 (set-frame-parameter nil 'internal-border-width 8) ; Use them now
+
+;; fix color display when loading emacs in terminal
+(defun enable-256color-term ()
+  (interactive)
+  (load-library "term/xterm")
+  (terminal-init-xterm))
+
+(unless (display-graphic-p)
+  (if (string-suffix-p "256color" (getenv "TERM"))
+    (enable-256color-term)))
 #+end_src
 
 ** Themes
