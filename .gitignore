@@ -9,3 +9,4 @@ init.el
 early-init.el
 projectile-bookmarks.eld
 places
+/eln-cache/

@@ -31,21 +31,47 @@ Try to avoid "Not Invented Here" syndrome, use an existing package to do somethi
 
 Emacs startup times can be painful, if left uncontrolled. With a "basic" config like this one still resulting in multi-second startup times, its a frequent topic of debate. Distributions like =doom-emacs= use fast startup times as one of the main selling points. Let's try to pull in all the wisdom on how to keep our config simple yet fast.
 
-** Lexical Binding
-Make elisp in this file behave like we expect these days. Everyone has this set, but no one explains why.
+** Early Init
+:properties:
+:header-args+: :tangle "./early-init.el"
+:end:
 
-In non-elisp speak, it adds proper scoping and "closure" behaviour to variables.[[https://www.emacswiki.org/emacs/DynamicBindingVsLexicalBinding][This Emacswiki article explains it well.]]
+In Emacs 27+, package initialization occurs before ~user-init-file~ is loaded, but after ~early-init-file~. We handle package initialization, so we must prevent Emacs from doing it early!
 
-#+begin_src emacs-lisp :comments no
-;;; config.el -*- lexical-binding: t ; eval: (view-mode -1) -*-
+#+begin_src emacs-lisp
+;;; -*- lexical-binding: t; -*-
 #+end_src
 
-Enable =view-mode=, which both makes the file read-only (as a reminder
-that =init.el= is an auto-generated file, not supposed to be edited),
-and provides some convenient key bindings for browsing through the
-file.
+*** Defer Compliations
 
-** Speed-up Initialization
+#+begin_src emacs-lisp
+(defvar comp-deferred-compliation)
+(setq comp-deferred-compilation t)
+#+end_src
+
+*** Low-haniging Speedup Fruits
+
+#+begin_src emacs-lisp
+(setq package-enable-at-startup nil)
+
+;; Resizing the Emacs frame can be a terribly expensive part of changing the
+;; font. By inhibiting this, we easily halve startup times with fonts that are
+;; larger than the system default.
+(setq frame-inhibit-implied-resize t)
+#+end_src
+
+*** Hide bars
+Prevent the glimpse of un-styled Emacs by disabling these UI elements early.
+
+#+begin_src emacs-lisp
+(menu-bar-mode -1)
+(unless (and (display-graphic-p) (eq system-type 'darwin))
+    (push '(menu-bar-lines . 0) default-frame-alist))
+(push '(tool-bar-lines . 0) default-frame-alist)
+(push '(vertical-scroll-bars) default-frame-alist)
+#+end_src
+
+*** Reduce GC
 Following [[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly][Doom-Emacs FAQ]], we max the garbage collection threshold on startup, and reset it to the original value after.
 
 #+begin_src emacs-lisp
@@ -72,6 +98,8 @@ Following [[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how
 (add-hook 'minibuffer-exit-hook #'me/restore-garbage-collection-h)
 #+end_src
 
+*** Temporarily avoid special handling of files
+
 We also set the ~file-name-handler-alist~ to an empty list, and reset it after Emacs has finished initializing.
 
 #+begin_src emacs-lisp
@@ -80,11 +108,28 @@ We also set the ~file-name-handler-alist~ to an empty list, and reset it after E
 (add-hook 'emacs-startup-hook
           (lambda ()
             (setq file-name-handler-alist me/-file-name-handler-alist)))
+#+end_src
 
+*** Disable =site-run-file=
+#+begin_src emacs-lisp
+(setq site-run-file nil)
+#+end_src
+
+*** Don't compact font caches
+#+begin_src emacs-lisp
 (setq inhibit-compacting-font-caches t)
 #+end_src
 
-** Straight.el
+*** Improve I/O
+Optimizations for improving I/O performance. Increase max bytes read from a sub-process in a single op (Emacs 27+)
+
+#+begin_src emacs-lisp
+(when (boundp 'read-process-output-max)
+  ;; 1MB in bytes, default 4096 bytes
+  (setq read-process-output-max 1048576))
+#+end_src
+
+*** Straight.el
 [[https://github.com/raxod502/straight.el][straight.el]] is used to download packages for us from all over the web. It stores them all in their respective git folders in =.emacs.d/straight=, which makes debugging, and contributing fixes back upstream as easy as possible.
 
 First, we configure some settings for =staight.el= to better integrate with =use-package=. [[https://github.com/jwiegley/use-package][use-package]] is a nice and consistent way to declare packages and their respective configs.
@@ -92,7 +137,9 @@ First, we configure some settings for =staight.el= to better integrate with =use
 #+begin_src emacs-lisp
 (setq straight-use-package-by-default t
       use-package-always-demand t
-      straight-cache-autoloads t)
+      straight-cache-autoloads t
+      straight-vc-git-default-clone-depth 1
+      vc-follow-symlinks t)
 #+end_src
 
 Then, we want to enable debugging whenever we encounter an error.
@@ -104,7 +151,6 @@ Then, we want to enable debugging whenever we encounter an error.
 Now, let's fetch =straight.el=.
 
 #+begin_src emacs-lisp
-(setq vc-follow-symlinks t)
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -132,14 +178,16 @@ Now, let's install =use-package=.
 (straight-use-package 'use-package)
 #+end_src
 
-** Benchmarking
+*** Benchmarking
 We use [[https://github.com/jschaf/esup][esup]] and [[https://github.com/dholm/benchmark-init-el][benchmark-init-el]] to keep tabs on our startup speed.
 
 #+begin_src emacs-lisp
 (use-package esup
+  :demand t
   :commands esup)
 
 (use-package benchmark-init
+  :demand t
   :hook (after-init . benchmark-init/deactivate))
 #+end_src
 
@@ -157,25 +205,34 @@ Also let's print a message to the =*messages*= buffer with the total startup tim
             gcs-done)))
 #+end_src
 
-** Early Init
-In Emacs 27+, package initialization occurs before ~user-init-file~ is loaded, but after ~early-init-file~. We handle package initialization, so we must prevent Emacs from doing it early!
+*** Use the garbage collector magic hack
+#+begin_src emacs-lisp
+(use-package gcmh
+  :demand t
+  :config
+  (gcmh-mode 1))
+#+end_src
 
-#+begin_src emacs-lisp :tangle early-init.el
-;;; -*- lexical-binding: t; -*-
-(setq package-enable-at-startup nil)
-
-;; Prevent the glimpse of un-styled Emacs by disabling these UI elements early.
-(push '(menu-bar-lines . 0) default-frame-alist)
-(push '(tool-bar-lines . 0) default-frame-alist)
-(push '(vertical-scroll-bars) default-frame-alist)
-
-;; Resizing the Emacs frame can be a terribly expensive part of changing the
-;; font. By inhibiting this, we easily halve startup times with fonts that are
-;; larger than the system default.
-(setq frame-inhibit-implied-resize t)
+*** End early-init.el
+#+begin_src emacs-lisp
+(provide 'early-init)
 #+end_src
 
 * General Emacs settings
+
+** Lexical Binding
+Make elisp in this file behave like we expect these days. Everyone has this set, but no one explains why.
+
+In non-elisp speak, it adds proper scoping and "closure" behaviour to variables.[[https://www.emacswiki.org/emacs/DynamicBindingVsLexicalBinding][This Emacswiki article explains it well.]]
+
+#+begin_src emacs-lisp :comments no
+;;; config.el -*- lexical-binding: t ; eval: (view-mode -1) -*-
+#+end_src
+
+Enable =view-mode=, which both makes the file read-only (as a reminder
+that =init.el= is an auto-generated file, not supposed to be edited),
+and provides some convenient key bindings for browsing through the
+file.
 
 ** Constants
 Let's define some constants we use throughout our config.
