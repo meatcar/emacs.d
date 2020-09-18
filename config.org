@@ -1144,6 +1144,8 @@ Emacs has some cool features built-in that make editing text nice. Let's turn th
 (setq show-paren-delay 0.0)
 ;; limit files to 80 columns. Controversial, I know.
 (setq-default fill-column 80)
+;; handle very long lines without hurting emacs
+(global-so-long-mode)
 #+end_src
 
 ** Editorconfig
