@@ -1112,9 +1112,13 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 (use-package eterm-256color
   :hook (term-mode . eterm-256color-mode))
 
+(defun me/disable-global-hl-line-mode ()
+  (global-hl-line-mode -1))
+
 (use-package vterm
   :straight nil
   :commands vterm vterm-other-window
+  :hook (vterm-mode . #'me/disable-global-hl-line-mode)
   :custom
   (vterm-term-environment-variable "eterm-color"))
 
