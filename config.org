@@ -1018,8 +1018,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :general
   (leader-def
     "p" '(:ignore t :wk "project")
-    "pd" 'projectile-dired
-    "pt" 'projectile-run-vterm)
+    "pd" 'projectile-dired)
   :custom
   (projectile-completion-system 'default)
   (projectile-enable-caching t)
@@ -1117,12 +1116,17 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :straight nil
   :commands vterm vterm-other-window
   :custom
-  (vterm-term-environment-variable "eterm-color")
-  :config
-  (add-to-list 'display-buffer-alist
-               '("*?vterm"
-                 (display-buffer-reuse-mode-window
-                  display-buffer-pop-up-window))))
+  (vterm-term-environment-variable "eterm-color"))
+
+(use-package multi-vterm
+  :after vterm projectile
+  :commands
+  multi-vterm
+  multi-vterm-next
+  multi-vterm-prev
+  multi-vterm-dedicated-toggle
+  multi-vterm-projectile)
+(leader-def "pt" '(multi-vterm-projectile :wk "toggle vterm"))
 #+end_src
 
 * Text Editing
