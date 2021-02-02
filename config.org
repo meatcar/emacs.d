@@ -251,7 +251,7 @@ Let's define some constants we use throughout our config.
 (defconst *serif-font-family*
   (if *is-windows* "Georgia" "IBM Plex Serif"))
 (defconst *serif-font-height*
-  (if *is-windows* 110 100))
+  (if *is-windows* 110 110))
 (defconst *project-dir* (expand-file-name "~/git"))
 #+end_src
 
