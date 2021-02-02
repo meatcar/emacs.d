@@ -380,16 +380,6 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
   :after evil
   :config
   (global-evil-surround-mode 1))
-(use-package evil-lion
-  :commands evil-lion-left evil-lion-right
-  :after evil
-  :general
-  (:states 'normal
-           "ga"  'evil-lion-left
-           "gA"  'evil-lion-right)
-  (:states 'visual
-           "ga"  'evil-lion-left
-           "gA"  'evil-lion-right))
 (use-package evil-org
   :demand t
   :after evil org
@@ -1200,6 +1190,21 @@ Emacs has some cool features built-in that make editing text nice. Let's turn th
                       :box t))
 #+end_src
 
+** Evil-Lion
+[[https://github.com/edkolev/evil-lion][=evil-lion=]] is a package to make alignment of text easier.
+
+#+begin_src emacs-lisp
+(use-package evil-lion
+  :commands evil-lion-left evil-lion-right
+  :after evil
+  :general
+  (:states 'normal
+           "ga"  'evil-lion-left
+           "gA"  'evil-lion-right)
+  (:states 'visual
+           "ga"  'evil-lion-left
+           "gA"  'evil-lion-right))
+#+end_src
 ** Parinfer
 [[https://shaunlebron.github.io/parinfer/][parinfer]] is a magical way to edit lispy languages, that allows you to just focus on indentation and code layout. The brackets get inserted and adjusted automagically.
 
