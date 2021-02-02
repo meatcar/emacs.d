@@ -1120,17 +1120,18 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :commands vterm vterm-other-window
   :hook (vterm-mode . #'me/disable-global-hl-line-mode)
   :custom
-  (vterm-term-environment-variable "eterm-color"))
+  (vterm-term-environment-variable "eterm-color")
+  :config
+  (remove-hook 'vterm-mode-hook 'vterm))
 
 (use-package multi-vterm
-  :after vterm projectile
   :commands
   multi-vterm
   multi-vterm-next
   multi-vterm-prev
   multi-vterm-dedicated-toggle
-  multi-vterm-projectile)
 (leader-def "pt" '(multi-vterm-projectile :wk "toggle vterm"))
+  multi-vterm-project)
 #+end_src
 
 * Text Editing
