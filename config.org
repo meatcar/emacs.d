@@ -279,7 +279,9 @@ Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does, b
       ;; when quiting emacs, just kill processes
       confirm-kill-processes nil
       ;; ask if local variables are safe once.
-      enable-local-variables :safe)
+      enable-local-variables t)
+
+
 
 ;; use human-readable sizes in dired
 (setq-default dired-listing-switches "-alh")
