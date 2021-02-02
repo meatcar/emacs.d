@@ -398,9 +398,6 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
   (add-hook 'evil-org-mode-hook 'evil-org-set-key-theme)
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
-(use-package evil-magit
-  :demand t
-  :after evil magit)
 #+END_SRC
 
 ** General.el
