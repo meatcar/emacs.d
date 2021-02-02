@@ -1482,6 +1482,28 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (use-package pug-mode)
 #+end_src
 
+** PHP
+#+begin_src emacs-lisp
+(use-package php-mode)
+#+end_src
+
+** Web Mode
+#+begin_src emacs-lisp
+(use-package web-mode)
+(use-package emmet-mode)
+#+end_src
+
+** JS
+#+begin_src emacs-lisp
+(use-package prettier-js
+  :hook
+  (web-mode . #'prettier-js-mode)
+  (js2-mode . #'prettier-js-mode))
+(use-package js2-mode
+  :hook
+  (js-mode . #'js2-minor-mode))
+#+end_src
+
 * Appendix
 
 ** Tangle Emacs config on save
