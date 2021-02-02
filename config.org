@@ -96,6 +96,7 @@ Following [[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how
 
 (add-hook 'minibuffer-setup-hook #'me/defer-garbage-collection-h)
 (add-hook 'minibuffer-exit-hook #'me/restore-garbage-collection-h)
+(setq garbage-collection-messages t)
 #+end_src
 
 *** Temporarily avoid special handling of files
