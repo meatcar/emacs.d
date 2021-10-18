@@ -1500,23 +1500,40 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 ** PHP
 #+begin_src emacs-lisp
 (use-package php-mode)
+(use-package ac-php
+  :after php-mode
+  :hook
+  (js2-mode #'ac-php-mode)
+  :config
+  (add-to-list 'company-backends #'company-ac-php-backend))
 #+end_src
 
 ** Web Mode
 #+begin_src emacs-lisp
 (use-package web-mode)
-(use-package emmet-mode)
+(use-package emmet-mode
+  :commands emmet-mode
+  :hook
+  (web-mode . emmet-mode))
 #+end_src
 
 ** JS
 #+begin_src emacs-lisp
-(use-package prettier-js
-  :hook
-  (web-mode . #'prettier-js-mode)
-  (js2-mode . #'prettier-js-mode))
 (use-package js2-mode
+  :interpreter (("node" . js2-mode))
+  :config
+  (add-hook 'js-mode-hook #'js2-minor-mode)
+  (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
+  (add-to-list 'auto-mode-alist '("\\.json$" . js2-mode)))
+
+(use-package skewer-mode
+  :commands skewer-mode
   :hook
-  (js-mode . #'js2-minor-mode))
+  (js2-mode . #'skewer-mode)
+  (css-mode . #'skewer-mode)
+  (html-mode . #'skewer-mode))
+
+(use-package add-node-modules-path)
 #+end_src
 
 * Appendix
