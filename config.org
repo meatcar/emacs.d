@@ -915,29 +915,14 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 #+end_src
 
 ** Format All
-[[https://github.com/lassik/emacs-format-all-the-code][emacs-format-all-the-code]] knows about all the different formatters for different languuages, and tries to run them if they are installed. We configure it to format all modes that are in the ~auto-format-modes~ list on save. We well add modes to this later.
+[[https://github.com/raxod502/apheleia][apheleia]] knows about all the different formatters for different languuages, and tries to run them if they are installed.
 
 #+begin_src emacs-lisp
-(defcustom auto-format-modes '()
-  "Modes to turn on format-all-mode in")
-(defcustom auto-format-dirs '()
-  "Directories to turn on format-all-mode in")
-
-(defun me/auto-format-buffer-p ()
-  (and
-   (member major-mode auto-format-modes)
-   (buffer-file-name)
-   (save-match-data
-     (let ((dir (file-name-directory (buffer-file-name))))
-       (cl-some (lambda (regexp) (string-match regexp dir))
-                auto-format-dirs)))))
-
-(defun me/maybe-format-all-mode ()
-  (format-all-mode (if (me/auto-format-buffer-p) 1 0)))
-
-(use-package format-all
-  :commands format-all-mode
-  :hook (after-change-major-mode . me/maybe-format-all-mode))
+(use-package apheleia
+  :straight (:host github :repo "raxod502/apheleia")
+  :defer 1
+  :config
+  (apheleia-global-mode +1))
 #+end_src
 
 ** Company
