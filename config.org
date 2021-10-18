@@ -1117,6 +1117,28 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 (leader-def "pt" 'multi-vterm-dedicated-toggle)
 #+end_src
 
+** Language Server Protocol
+#+begin_src emacs-lisp
+(use-package lsp-mode
+  :defer 1
+  :commands lsp lsp-deferred
+  :hook
+  (prog-mode . lsp-deferred)
+  (lsp-mode . lsp-enable-which-key-integration)
+  :init
+  (setq lsp-completion-provider :capf
+        lsp-keymap-prefix nil)
+  :general
+  (local-leader-def
+    :keymaps 'lsp-mode-map
+    "l" '(lsp-command-map :wk "LSP")))
+
+(use-package company-lsp
+  :after company lsp-mode
+  :config
+  (add-to-list 'company-backends 'company-lsp))
+#+end_src
+
 * Text Editing
 
 ** Make Text Editing Sensible
