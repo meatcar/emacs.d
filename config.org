@@ -941,6 +941,8 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 (use-package company-posframe
   :defer 1
   :after company
+  :custom
+  (company-posframe-quickhelp-delay nil)
   :config
   (company-posframe-mode 1))
 #+end_src
@@ -1111,8 +1113,8 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   multi-vterm-next
   multi-vterm-prev
   multi-vterm-dedicated-toggle
-(leader-def "pt" '(multi-vterm-projectile :wk "toggle vterm"))
   multi-vterm-project)
+(leader-def "pt" 'multi-vterm-dedicated-toggle)
 #+end_src
 
 * Text Editing
