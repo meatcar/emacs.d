@@ -189,6 +189,7 @@ We use [[https://github.com/jschaf/esup][esup]] and [[https://github.com/dholm/b
 
 (use-package benchmark-init
   :demand t
+  :straight (:host github :repo "kekeimiku/benchmark-init-el")
   :hook (after-init . benchmark-init/deactivate))
 #+end_src
 
@@ -764,8 +765,6 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (after-revert . turn-on-solaire-mode)
   ;; To enable solaire-mode unconditionally for certain modes:
   (ediff-prepare-buffer . solaire-mode)
-  ;; Highlight the minibuffer when it is activated:
-  (minibuffer-setup . solaire-mode-in-minibuffer)
   :custom
   (solaire-mode-auto-swap-bg t)
   :config
@@ -1450,8 +1449,7 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 
 ** Git
 #+begin_src emacs-lisp
-(use-package gitconfig-mode)
-(use-package gitignore-mode)
+(use-package git-modes)
 #+end_src
 
 ** Nix
@@ -1602,3 +1600,5 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 ;; byte-compile-warnings: (not free-vars)
 ;; End:
 #+end_src
+
+
