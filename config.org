@@ -979,11 +979,9 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :custom
   (projectile-completion-system 'default)
   (projectile-enable-caching t)
-  (if (file-directory-p *project-dir*)
-      (projectile-project-search-path)
-      (me/expand-git-project-dirs *project-dir*))
   (projectile-sort-order 'recently-active)
   (projectile-indexing-method (if *is-unix* 'hybrid 'native))
+  (projectile-project-search-path `((,*project-dir* . 3)))
   :config
   (projectile-save-known-projects)
   (projectile-mode +1))
