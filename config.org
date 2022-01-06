@@ -537,7 +537,7 @@ We set a regular font and a ~variable-pitch~ one, the latter is used by ~mixed-p
 ** All The Icons
 [[https://github.com/domtronn/all-the-icons.el/][all-the-icons]] allows emacs to show pretty icons anywhere we want.
 
-We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-dired]] to show them in =dired=, [[https://github.com/Alexander-Miller/treemacs/blob/master/src/extra/treemacs-all-the-icons.el][treemacs-all-the-icons]] to show them in =treemacs=, [[https://github.com/asok/all-the-icons-ivy][all-the-icons-ivy]] to show them in =ivy=, and [[https://github.com/seagle0128/all-the-icons-ivy-rich][all-the-icons-ivy-rich]] to show them in =ivy-rich=.
+We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-dired]] to show them in =dired=, [[https://github.com/Alexander-Miller/treemacs/blob/master/src/extra/treemacs-all-the-icons.el][treemacs-all-the-icons]] to show them in =treemacs=, and [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]] for completion sources.
 
 #+begin_src emacs-lisp
 (use-package all-the-icons
@@ -551,16 +551,13 @@ We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-d
   :after all-the-icons treemacs
   :config
   (treemacs-load-theme "all-the-icons"))
-(use-package all-the-icons-ivy
+(use-package all-the-icons-completion
   :defer 1
   :after all-the-icons
   :config
-  (all-the-icons-ivy-setup))
-(use-package all-the-icons-ivy-rich
-  :defer 1
-  :after all-the-icons
-  :config
-  (all-the-icons-ivy-rich-mode 1))
+  (add-hook 'marginalia-mode-hook
+            #'all-the-icons-completion-marginalia-setup)
+  (all-the-icons-completion-mode 1))
 #+end_src
 
 ** Dashboard
@@ -839,67 +836,13 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 #+end_src
 
 ** Prescient
-[[https://github.com/raxod502/prescient.el][prescient.el]] teaches =ivy= and =company= better sorting and filtering.
+[[https://github.com/raxod502/prescient.el][prescient.el]] teaches =company= better sorting and filtering.
 
 #+begin_src emacs-lisp
 (use-package prescient
   :defer 1
   :config
   (prescient-persist-mode 1))
-#+end_src
-
-** Counsel, Ivy
-[[https://github.com/abo-abo/swiper][swiper/ivy/counsel]] is a great UI to visualize and filter lists. It sets itself up to augment most prompts to filter possible matches as you type. It's good stuff.
-
-#+begin_src emacs-lisp
-(use-package ivy
-  :defer 1
-  :custom
-  ;; add bookmarks and recentf to buffer lists
-  (ivy-use-virtual-buffers t)
-  ;; better matching method
-  (ivy-re-builders-alist '((t . ivy--regex-plus)))
-  :config
-  (ivy-mode 1))
-(use-package counsel
-  :defer 1
-  :general
-  (leader-def
-    "SPC" '(counsel-M-x :wk "M-x")
-    "ff" 'counsel-find-file
-    "fr" 'counsel-buffer-or-recentf
-    "bb" 'switch-to-buffer
-    "tc" 'counsel-load-theme)
-  (:states 'normal
-           "C-p"  'projectile-find-file
-           "C-S-p"  'counsel-M-x)
-  :config
-  (counsel-mode 1))
-;; better fuzzy matching.
-(use-package flx
-  :defer 1
-  :after ivy counsel)
-(use-package ivy-prescient
-  :defer 1
-  :after ivy counsel prescient
-  :config
-  (ivy-prescient-mode 1))
-;; add more information to ivy/counsel
-(use-package ivy-rich
-  :defer 1
-  :after ivy counsel all-the-icons-ivy-rich
-  :config
-  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
-  (ivy-rich-mode 1)
-  (setq ivy-initial-inputs-alist nil))
-
-(use-package ivy-posframe
-  :defer 1
-  :after ivy counsel
-  :config
-  (setq ivy-posframe-display-functions-alist
-        '((t . ivy-posframe-display-at-frame-top-center)))
-  (ivy-posframe-mode 1))
 #+end_src
 
 ** Flycheck
@@ -918,8 +861,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (flycheck-posframe-configure-pretty-defaults)
   (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)
   (add-hook 'flycheck-posframe-inhibit-functions #'evil-insert-state-p)
-  (add-hook 'flycheck-posframe-inhibit-functions #'evil-replace-state-p)
-  (advice-add 'org-edit-src-exit :after #'flycheck-posframe-hide-posframe))
+  (add-hook 'flycheck-posframe-inhibit-functions #'evil-replace-state-p))
 #+end_src
 
 ** Format All
@@ -1021,17 +963,6 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :config
   (projectile-save-known-projects)
   (projectile-mode +1))
-
-(use-package counsel-projectile
-  :defer 1
-  :after counsel projectile
-  :general
-  (leader-def
-    "pp" 'counsel-projectile-switch-project
-    "pb" 'counsel-projectile-switch-to-buffer
-    "fp" 'counsel-projectile-find-file-dwim
-    "pf" 'counsel-projectile-find-file-dwim
-    "p/" 'counsel-projectile-rg))
 #+end_src
 
 ** Git Gutter
@@ -1145,6 +1076,171 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :after company lsp-mode
   :config
   (add-to-list 'company-backends 'company-lsp))
+#+end_src
+
+** Completion
+*** Vertico
+[[https://github.com/minad/vertico][vertico]] is a replacement/improvement of emacs' default =icomplete=. It provides a pop-up menu to narrow down a list of choices.
+
+#+begin_src emacs-lisp
+(use-package emacs
+  :init
+  ;; Do not allow the cursor in the minibuffer prompt
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+  ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
+  (setq read-extended-command-predicate
+        #'command-completion-default-include-p)
+
+  ;; Enable recursive minibuffers
+  (setq enable-recursive-minibuffers t))
+
+(use-package savehist
+  :demand t
+  :config
+  (savehist-mode 1))
+
+(use-package vertico
+  :demand t
+  :config
+  (vertico-mode))
+
+(use-package icomplete
+  :custom
+  (read-file-name-completion-ignore-case t)
+  (read-buffer-completion-ignore-case t)
+  (completion-ignore-case t)
+
+  (completion-category-defaults nil)
+  (completion-category-overrides
+   '((file (styles basic partial-completion))))
+
+  (completion-group t)
+  (completions-group-format
+        (concat
+         (propertize "    " 'face 'completions-group-separator)
+         (propertize " %s " 'face 'completions-group-title)
+         (propertize " " 'face 'completions-group-separator
+                     'display '(space :align-to right)))))
+#+end_src
+
+***  Orderless
+[[https://github.com/oantolin/orderless][orderless]] teaches icomplete to match mutliple patterns in any order.
+
+#+begin_src emacs-lisp
+(use-package orderless
+  :demand t
+  :custom
+  (completion-styles '(orderless))
+  :config
+  (defun prefix-if-tilde (pattern _index _total)
+    (when (string-suffix-p "~" pattern)
+      `(orderless-prefixes . ,(substring pattern 0 -1))))
+
+  (defun regexp-if-slash (pattern _index _total)
+    (when (string-prefix-p "/" pattern)
+      `(orderless-regexp . ,(substring pattern 1))))
+
+  (defun literal-if-equal (pattern _index _total)
+    (when (string-suffix-p "=" pattern)
+      `(orderless-literal . ,(substring pattern 0 -1))))
+
+  (defun without-if-bang (pattern _index _total)
+    (cond
+     ((equal "!" pattern)
+      '(orderless-literal . ""))
+     ((string-prefix-p "!" pattern)
+      `(orderless-without-literal . ,(substring pattern 1)))))
+
+  (setq orderless-matching-styles '(orderless-flex))
+  (setq orderless-style-dispatchers
+        '(prefix-if-tilde
+          regexp-if-slash
+          literal-if-equal
+          without-if-bang)))
+#+end_src
+
+***  Marginalia
+[[https://github.com/minad/marginalia][marginalia]] adds annotations to minibuffer completions
+
+#+begin_src emacs-lisp
+(use-package marginalia
+  :defer 1
+  :config
+  (marginalia-mode 1))
+#+end_src
+
+*** Consult
+[[https://github.com/minad/consult][consult]] provides fancy commands for =icomplete=
+
+#+begin_src emacs-lisp
+(use-package consult
+  :defer 1
+  :general
+  (leader-def
+    "ff" 'find-file
+    "fr" 'consult-recent-file
+    "bb" 'consult-buffer
+    "tc" 'consult-theme
+    "/"  'consult-ripgrep
+    "g/" 'consult-git-grep)
+  :custom
+  (consult-project-root-function #'projectile-project-root)
+  (consult-narrow-key "<")
+  :config
+  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple))
+
+(use-package consult-projectile
+  :after consult projectile
+  :demand t
+  :straight (consult-projectile :type git :host gitlab :repo "OlMon/consult-projectile" :branch "master")
+  :general
+  (leader-def
+    "pp" 'consult-projectile
+    "pb" 'projectile-switch-to-buffer
+    "pf" 'projectile-find-file
+    "p/" 'projectile-ripgrep))
+
+(use-package consult-flycheck
+  :after (consult flycheck)
+  :demand t
+  :general
+  (leader-def
+    "ee" 'consult-flycheck))
+#+end_src
+
+***  Embark
+[[https://github.com/oantolin/embark/][embark]] lets us capture minibuffer output in a buffer, and act on items/contexts. Kind of like a right-click.
+
+#+begin_src emacs-lisp
+(use-package embark
+  :after marginalia
+  :demand t
+  :custom
+  (prefix-help-command #'embark-prefix-help-command)
+  :config
+  (embark-define-keymap embark-straight-map
+    "Keymap actions for straight.el"
+    ("u" straight-visit-package-website)
+    ("r" straight-get-recipe)
+    ("i" straight-use-package)
+    ("c" straight-check-package)
+    ("F" straight-pull-package)
+    ("f" straight-fetch-package)
+    ("p" straight-push-package)
+    ("n" straight-normalize-package)
+    ("m" straight-merge-package))
+  (add-to-list 'embark-keymap-alist '(straight . embark-straight-map))
+  (add-to-list 'marginalia-prompt-categories '("recipe\\|package" . straight)))
+
+(use-package embark-consult
+  :after (embark consult)
+  :demand t
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
 #+end_src
 
 * Text Editing
@@ -1276,7 +1372,6 @@ We use [[https://github.com/justinbarclay/parinfer-rust-mode][parinfer-rust-mode
     "eb" '(org-babel-execute-buffer :wk "execute buffer")
     "et" '(org-babel-execute-subtree :wk "execute subtree")
     "'"  '(org-edit-special :wk "edit block")
-    "tt" 'counsel-org-tag
     "tv" 'org-change-tag-in-region
     "b" '(:ignore t :wk "babel")
     "bt" 'org-babel-tangle)
