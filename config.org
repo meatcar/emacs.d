@@ -412,7 +412,22 @@ We will define two "leader maps", similar to vim's =<leader>= and =<localleader>
     :keymaps 'override
     :prefix "SPC"
     :non-normal-prefix "C-SPC")
-  (leader-def "" '(:ignore t :wk "leader"))
+  (leader-def
+    "" '(:ignore t :wk "leader")
+    "f" '(:ignore t :wk "file")
+    "c" '(:ignore t :wk "checks")
+    "t" '(:ignore t :wk "toggle")
+    "b" '(:ignore t :wk "buffer")
+    "bd" 'kill-this-buffer
+    "bn" 'next-buffer
+    "bp" 'previous-buffer
+    "bx" 'kill-buffer-and-window
+    "s" '(:ignore t :wk "straight")
+    "sf" 'straight-x-fetch-all
+    "sp" 'straight-x-pull-all
+    "sr" 'straight-remove-unused-repos
+    "ss" 'straight-get-recipe)
+
   (general-create-definer localleader-def
     :states '(normal motion emacs)
     :keymaps 'override
@@ -851,15 +866,9 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   :general
   (leader-def
     "SPC" '(counsel-M-x :wk "M-x")
-    "f" '(:ignore t :wk "file")
     "ff" 'counsel-find-file
     "fr" 'counsel-buffer-or-recentf
-    "b" '(:ignore t :wk "buffer")
     "bb" 'switch-to-buffer
-    "bd" 'kill-this-buffer
-    "bn" 'next-buffer
-    "bp" 'previous-buffer
-    "bx" 'kill-buffer-and-window
     "tc" 'counsel-load-theme)
   (:states 'normal
            "C-p"  'projectile-find-file
