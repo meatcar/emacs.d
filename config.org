@@ -644,22 +644,28 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
   (calendar-mode . centaur-tabs-local-mode)
   (org-agenda-mode . centaur-tabs-local-mode)
   (helpful-mode . centaur-tabs-local-mode)
+  :init
+  (setq centaur-tabs-enable-key-bindings t)
   :custom
-  (centaur-tabs-style "bar")
+  (centaur-tabs-style "wave")
   (centaur-tabs-set-icons t)
   (centaur-tabs-set-modified-marker t)
   (centaur-tabs-height 28)
-  (x-underline-at-descent-line t)
-  (uniquify-separator "/")
-  (uniquify-buffer-name-style 'forward)
   (centaur-tabs-gray-out-icons 'buffer)
   (centaur-tabs-modified-marker "")
+  (uniquify-separator "/")
+  (uniquify-buffer-name-style 'forward)
   :config
   (centaur-tabs-headline-match)
   (centaur-tabs-enable-buffer-reordering)
   (centaur-tabs-mode t)
   (centaur-tabs-change-fonts *mono-font-family* *mono-font-height*)
 
+  (defun me/after-theme (&rest _args)
+      (centaur-tabs-init-tabsets-store)
+      (centaur-tabs-display-update)
+      (centaur-tabs-headline-match))
+  (advice-add 'enable-theme :after #'me/after-theme)
 
   (defun centaur-tabs-buffer-groups ()
     "`centaur-tabs-buffer-groups' control buffers' group rules.
