@@ -618,6 +618,7 @@ We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-d
   (doom-modeline-height 28)
   ;; 1 minor mode will be shown thanks to minions
   (doom-modeline-minor-modes t)
+  (doom-modeline-hud t)
   :config
   (doom-modeline-mode 1))
 #+end_src
