@@ -816,7 +816,8 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   :general
   (leader-def
     "h" '(:ignore t :wk "help")
-    "hf" 'helpful-callable
+    "hh" 'helpful-symbol
+    "hf" 'helpful-function
     "hv" 'helpful-variable
     "hk" 'helpful-key
     "ho" 'helpful-at-point)
@@ -854,6 +855,7 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
   (leader-def
     "q" '(:ignore t :wk "exit emacs")
     "qR" 'restart-emacs
+    "qn" 'restart-emacs-start-new-emacs
     "qr" 'me/reload-init))
 #+end_src
 
@@ -1242,6 +1244,10 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :demand t
   :custom
   (prefix-help-command #'embark-prefix-help-command)
+  :general
+  (leader-def
+    "hm" 'embark-bindings-in-keymap
+    "hM" 'embark-bindings)
   :config
   (embark-define-keymap embark-straight-map
     "Keymap actions for straight.el"
