@@ -1269,6 +1269,12 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 
 #+end_src
 
+** Devdocs
+[[https://github.com/blahgeek/emacs-devdocs-browser][devdocs-broswer]] loads devdocs.io documentation inside =eww=, and caches them for offline reading.
+
+#+begin_src emacs-lisp
+(use-package devdocs-browser)
+#+end_src
 * Text Editing
 
 ** Make Text Editing Sensible
