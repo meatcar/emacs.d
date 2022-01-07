@@ -647,7 +647,7 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
   :init
   (setq centaur-tabs-enable-key-bindings t)
   :custom
-  (centaur-tabs-style "wave")
+  (centaur-tabs-style "bar")
   (centaur-tabs-set-icons t)
   (centaur-tabs-set-modified-marker t)
   (centaur-tabs-height 28)
