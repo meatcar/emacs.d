@@ -975,7 +975,11 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :general
   (leader-def
     "p" '(:ignore t :wk "project")
-    "pd" 'projectile-dired)
+    "pP" 'projectile-switch-project
+    "pd" 'projectile-dired
+    "pb" 'projectile-switch-to-buffer
+    "pf" 'projectile-find-file
+    "p/" 'projectile-ripgrep)
   :custom
   (projectile-completion-system 'default)
   (projectile-enable-caching t)
@@ -1220,10 +1224,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :straight (consult-projectile :type git :host gitlab :repo "OlMon/consult-projectile" :branch "master")
   :general
   (leader-def
-    "pp" 'consult-projectile
-    "pb" 'projectile-switch-to-buffer
-    "pf" 'projectile-find-file
-    "p/" 'projectile-ripgrep))
+    "pp" 'consult-projectile))
 
 (use-package consult-flycheck
   :after (consult flycheck)
