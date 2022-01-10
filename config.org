@@ -978,8 +978,6 @@ We pair it with [[https://github.com/alphapapa/magit-todos][magit-todos]] which 
   :if *is-unix*
   :after magit
   :commands magit-delta-mode
-  :custom
-  (magit-delta-default-dark-theme "Dracula")
   :hook (magit-mode . magit-delta-mode))
 #+end_src
 
