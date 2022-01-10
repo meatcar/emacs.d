@@ -207,6 +207,14 @@ Also let's print a message to the =*messages*= buffer with the total startup tim
             gcs-done)))
 #+end_src
 
+*** Explain Pauses
+Troubleshoot pauses with [[https://github.com/lastquestion/explain-pause-mode][explain-pause-mode]].
+
+#+begin_src emacs-lisp
+(use-package explain-pause-mode
+  :hook (after-init . explain-pause-mode))
+#+end_src
+
 *** Use the garbage collector magic hack
 #+begin_src emacs-lisp
 (use-package gcmh
