@@ -630,6 +630,7 @@ Out of the box they come configured ok, but not perfect. We configure the tabs t
 
 #+begin_src emacs-lisp
 (use-package centaur-tabs
+  :disabled t
   :defer 1
   :after all-the-icons
   :general
