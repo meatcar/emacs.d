@@ -1134,6 +1134,17 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 #+begin_src emacs-lisp
 (use-package emacs
   :init
+  ;; Add prompt indicator to `completing-read-multiple'.
+  ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
+  (defun crm-indicator (args)
+    (cons (format "[CRM%s] %s"
+                  (replace-regexp-in-string
+                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+                   crm-separator)
+                  (car args))
+          (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
   ;; Do not allow the cursor in the minibuffer prompt
   (setq minibuffer-prompt-properties
         '(read-only t cursor-intangible t face minibuffer-prompt))
@@ -1149,10 +1160,13 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 (use-package savehist
   :demand t
   :config
-  (savehist-mode 1))
+  (savehist-mode))
 
 (use-package vertico
   :demand t
+  :custom
+  (vertico-resize t)
+  (vertico-cycle t)
   :config
   (vertico-mode))
 
@@ -1237,9 +1251,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
     "g/" 'consult-git-grep)
   :custom
   (consult-project-root-function #'projectile-project-root)
-  (consult-narrow-key "<")
-  :config
-  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple))
+  (consult-narrow-key "<"))
 
 (use-package consult-projectile
   :after consult projectile
@@ -1255,9 +1267,14 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   :general
   (leader-def
     "ee" 'consult-flycheck))
+
+;; (use-package consult-lsp
+;;   :straight (consult-lsp :type git :host github :repo "gagbo/consult-lsp" :protocol ssh)
+;;   :commands (consult-lsp-symbols consult-lsp-diagnostics consult-lsp-file-symbols)
+;;   :config (define-key lsp-mode-map [remap xref-find-apropos] #'consult-lsp-symbols))
 #+end_src
 
-***  Embark
+*** Embark
 [[https://github.com/oantolin/embark/][embark]] lets us capture minibuffer output in a buffer, and act on items/contexts. Kind of like a right-click.
 
 #+begin_src emacs-lisp
@@ -1293,12 +1310,69 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
 
 #+end_src
 
+*** Corfu
+
+[[https://github.com/minad/corfu][corfu]] is a minimalist package to compliment =completion-in-region=.
+
+
+#+begin_src elisp
+(use-package corfu
+  :straight (corfu :files (:defaults "extensions/*")) 
+  :after prescient
+  :custom
+  (tab-always-indent 'complete)
+  :init
+  (global-corfu-mode)
+  (defun corfu-enable-always-in-minibuffer ()
+    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
+    (unless (or (bound-and-true-p mct--active)
+                (bound-and-true-p vertico--input))
+        (setq-local corfu-auto nil) ;; Disable auto completion
+        (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
+                    corfu-popupinfo-delay nil)
+        (corfu-mode 1)))
+  (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer 1))
+
+(use-package corfu-history
+  :straight nil
+  :after (corfu savehist)
+  :commands corfu-history-mode
+  :init
+  (add-to-list 'savehist-additional-variables 'corfu-history)
+  (corfu-history-mode 1))
+
+(use-package corfu-echo
+  :straight nil
+  :after corfu
+  :commands corfu-echo-mode
+  :init
+  (corfu-echo-mode 1))
+
+(use-package corfu-popupinfo
+  :straight nil
+  :after corfu
+  :commands corfu-popupinfo-mode
+  :init
+  (corfu-popupinfo-mode 1))
+
+(use-package kind-all-the-icons
+  :straight
+  (kind-all-the-icons :type git :host github
+                      :repo "Hirozy/kind-all-the-icons")
+  :if (display-graphic-p)
+  :after corfu
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-all-the-icons-margin-formatter))
+#+end_src
+
 ** Devdocs
 [[https://github.com/blahgeek/emacs-devdocs-browser][devdocs-broswer]] loads devdocs.io documentation inside =eww=, and caches them for offline reading.
 
 #+begin_src emacs-lisp
 (use-package devdocs-browser)
 #+end_src
+
+
 * Text Editing
 
 ** Make Text Editing Sensible
