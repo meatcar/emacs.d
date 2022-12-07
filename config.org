@@ -586,9 +586,10 @@ We pair it with [[https://github.com/jtbm37/all-the-icons-dired][all-the-icons-d
 (use-package dashboard
   :demand t
   :after all-the-icons projectile
+  :if (< (length command-line-args) 2)
   :custom
   ;; show in `emacsclient -c`
-  (initial-buffer-choice #'(lambda () (get-buffer "*dashboard*")))
+  (initial-buffer-choice #'(lambda () (get-buffer-create "*dashboard*")))
   (dashboard-startup-banner 'logo)
   (dashboard-set-heading-icons t)
   (dashboard-set-file-icons t)
