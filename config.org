@@ -1702,6 +1702,7 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
   (dired-mode . pretty-sha-path-mode))
 (use-package direnv
   :config
+  (add-hook 'prog-mode-hook #'direnv--maybe-update-environment)
   (direnv-mode 1))
 #+end_src
 
