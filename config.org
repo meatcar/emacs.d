@@ -1773,6 +1773,12 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (use-package add-node-modules-path)
 #+end_src
 
+** Terraform
+#+begin_src emacs-lisp
+(use-package terraform-mode)
+(use-package hcl-mode)
+#+end_src
+
 ** Elixir
 
 #+begin_src elisp
@@ -1786,6 +1792,7 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
   :hook
   (elixir-mode . me/elixir-mode-save-hook))
 #+end_src
+
 * Appendix
 
 ** Tangle Emacs config on save
