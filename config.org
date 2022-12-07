@@ -263,6 +263,7 @@ Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does, b
 
 #+BEGIN_SRC emacs-lisp
 (use-package better-defaults
+  :straight (better-defaults :type git :host nil :repo "https://git.sr.ht/~technomancy/better-defaults")
   :demand t)
 
 (setq default-directory "~/"
