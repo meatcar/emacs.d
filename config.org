@@ -1188,8 +1188,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
          (propertize " " 'face 'completions-group-separator
                      'display '(space :align-to right)))))
 #+end_src
-
-***  Orderless
+*** Orderless
 [[https://github.com/oantolin/orderless][orderless]] teaches icomplete to match mutliple patterns in any order.
 
 #+begin_src emacs-lisp
@@ -1225,7 +1224,7 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
           without-if-bang)))
 #+end_src
 
-***  Marginalia
+*** Marginalia
 [[https://github.com/minad/marginalia][marginalia]] adds annotations to minibuffer completions
 
 #+begin_src emacs-lisp
