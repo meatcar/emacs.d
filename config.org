@@ -140,6 +140,8 @@ First, we configure some settings for =staight.el= to better integrate with =use
       use-package-always-defer t
       straight-cache-autoloads t
       straight-vc-git-default-clone-depth 1
+      straight-check-for-modifications '(find-when-checking)
+      package-enable-at-startup nil
       vc-follow-symlinks t)
 #+end_src
 
@@ -280,15 +282,15 @@ Essentially what [[https://github.com/tpope/vim-sensible][vim-sensible]] does, b
       ;; when quiting emacs, just kill processes
       confirm-kill-processes nil
       ;; ask if local variables are safe once.
-      enable-local-variables t)
+      enable-local-variables t
+      ;; life is too short to type yes or no
+      use-short-answers t
 
-
+      ;; clean up dired buffers
+      dired-kill-when-opening-new-dired-buffer t)
 
 ;; use human-readable sizes in dired
 (setq-default dired-listing-switches "-alh")
-
-;; life is too short to type yes or no
-(defalias 'yes-or-no-p 'y-or-n-p)
 
 ;; always highlight code
 (global-font-lock-mode 1)
@@ -443,20 +445,10 @@ A good-looking tool is a pleasure to work with. Here, we try to tweak all the di
 #+begin_src emacs-lisp
 (setq ring-bell-function 'ignore ; no bell
       ;; better scrolling
-      scroll-step 1
       scroll-conservatively 101
       scroll-preserve-screen-position 1
-      mouse-wheel-scroll-amount '(1 ((shift) . 5))
       mouse-wheel-follow-mouse t
-      ;; lines between the cursor and the edge of the screen
-      scroll-margin 3
-
-      ;; wrap lines that are too long.
-      truncate-lines nil
-      ;; don't resize frames a character at a time, but use pixels
-      frame-resize-pixelwise t)
-
-;; add some space between lines for easier reading.
+      pixel-scroll-precision-use-momentum t)
 (setq-default line-spacing 1)
 
 ;; highlight the current line
@@ -1095,6 +1087,8 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
   multi-vterm-dedicated-toggle
   multi-vterm-project)
 (leader-def "pt" 'multi-vterm-dedicated-toggle)
+
+(use-package pcmpl-args)
 #+end_src
 
 ** Language Server Protocol
