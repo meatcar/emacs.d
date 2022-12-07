@@ -514,13 +514,18 @@ We will load all the themes. We need to ~:defer~ them, to prevent each theme get
   (modus-themes-intense-markup t)
   (modus-themes-mode-line '(borderless moody))
   (modus-themes-tabs-accented t)
-  (modus-themes-completions 'opinionated)
+  (modus-themes-completions
+   '((matches . (extrabold background intense))
+     (selection . (semibold accented intense))
+     (popup . (accented))
+     (t . (extrabold intense))))
   (modus-themes-org-blocks 'tinted-background)
+  (modus-themes-mixed-fonts t)
   (modus-themes-headings
-      '((1 . (rainbow variable-pitch 1.5))
-        (2 . (rainbow variable-pitch 1.3))
-        (3 . (rainbow variable-pitch 1.1))
-        (t . (monochrome variable-pitch)))))
+      '((1 . (rainbow))
+        (2 . (rainbow))
+        (3 . (rainbow))
+        (t . (monochrome)))))
 
 (defun me/init-theme ()
   (load-theme 'doom-dracula t))
@@ -753,9 +758,10 @@ Always redraw immediately when scrolling, more responsive and doesn't hang! Sour
 (use-package mixed-pitch
   :after all-the-icons
   :defer 1
+  :commands mixed-pitch-mode
   :custom
-  (mixed-pitch-set-height t)
-  :hook (text-mode . mixed-pitch-mode))
+  (mixed-pitch-set-height t))
+  ;; :hook (text-mode . mixed-pitch-mode))
 #+end_src
 
 ** Ligatures
