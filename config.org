@@ -439,6 +439,12 @@ We will define two "leader maps", similar to vim's =<leader>= and =<localleader>
   (localleader-def "" '(:ignore t :wk "mode")))
 #+end_src
 
+** Fancy Compilation
+
+#+begin_src elisp
+(add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
+#+end_src
+
 * Interface
 A good-looking tool is a pleasure to work with. Here, we try to tweak all the dials Emacs gives us to make it pretty and =A E S T H E T I C=.
 
