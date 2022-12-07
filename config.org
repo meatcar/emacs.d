@@ -1773,6 +1773,19 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (use-package add-node-modules-path)
 #+end_src
 
+** Elixir
+
+#+begin_src elisp
+(defun me/elixir-mode-save-hook ()
+  (add-hook 'before-save-hook 'elixir-format nil t))
+(use-package elixir-mode
+  :commands elixir-mode
+  :mode
+  ("\\.exs?" . elixir-mode)
+  ("\\.elixir" . elixir-mode)
+  :hook
+  (elixir-mode . me/elixir-mode-save-hook))
+#+end_src
 * Appendix
 
 ** Tangle Emacs config on save
