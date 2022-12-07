@@ -528,7 +528,7 @@ We will load all the themes. We need to ~:defer~ them, to prevent each theme get
         (t . (monochrome)))))
 
 (defun me/init-theme ()
-  (load-theme 'doom-dracula t))
+  (load-theme 'modus-operandi t))
 
 (add-hook 'emacs-startup-hook #'me/init-theme)
 #+end_src
