@@ -1822,13 +1822,15 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
           (nth 5 (file-attributes *config-file*)))
     (me/async-babel-tangle *config-file*)))
 
-(add-hook 'org-mode-hook
-          (lambda ()
-            (when (equal (expand-file-name buffer-file-truename)
-                         ,*config-file*)
-              (add-hook 'after-save-hook
-                        'me/config-tangle
-                        nil 'make-it-local))))
+(defun me/config-tangle-hook ()
+  (when (and (not (null buffer-file-truename))
+             (equal (expand-file-name buffer-file-truename)
+                    ,*config-file*))
+    (add-hook 'after-save-hook
+              #'me/config-tangle
+              nil 'make-it-local)))
+
+(add-hook 'org-mode-hook #'me/config-tangle-hook)
 #+end_src
 
 ** Remove flycheck elisp warnings in init.el
