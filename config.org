@@ -1741,7 +1741,7 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
 (use-package ac-php
   :after php-mode
   :hook
-  (js2-mode #'ac-php-mode)
+  (js2-mode . #'ac-php-mode)
   :config
   (add-to-list 'company-backends #'company-ac-php-backend))
 #+end_src
