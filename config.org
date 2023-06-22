@@ -1764,13 +1764,6 @@ Track time spent on tasks in org-mode. Inspired by [[https://github.com/raxod502
   (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
   (add-to-list 'auto-mode-alist '("\\.json$" . js2-mode)))
 
-(use-package skewer-mode
-  :commands skewer-mode
-  :hook
-  (js2-mode . #'skewer-mode)
-  (css-mode . #'skewer-mode)
-  (html-mode . #'skewer-mode))
-
 (use-package add-node-modules-path)
 #+end_src
 
