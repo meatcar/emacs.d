@@ -1287,17 +1287,18 @@ Given my git projects directory ROOT, with a layout like =git/{hub,lab}/<user>/p
     "hm" 'embark-bindings-in-keymap
     "hM" 'embark-bindings)
   :config
-  (embark-define-keymap embark-straight-map
-    "Keymap actions for straight.el"
-    ("u" straight-visit-package-website)
-    ("r" straight-get-recipe)
-    ("i" straight-use-package)
-    ("c" straight-check-package)
-    ("F" straight-pull-package)
-    ("f" straight-fetch-package)
-    ("p" straight-push-package)
-    ("n" straight-normalize-package)
-    ("m" straight-merge-package))
+  (defvar-keymap embark-straight-map
+    :doc "Keymap actions for straight.el"
+    :parent embark-general-map
+    "u" #'straight-visit-package-website
+    "r" #'straight-get-recipe
+    "i" #'straight-use-package
+    "c" #'straight-check-package
+    "F" #'straight-pull-package
+    "f" #'straight-fetch-package
+    "p" #'straight-push-package
+    "n" #'straight-normalize-package
+    "m" #'straight-merge-package)
   (add-to-list 'embark-keymap-alist '(straight . embark-straight-map))
   (add-to-list 'marginalia-prompt-categories '("recipe\\|package" . straight)))
 
