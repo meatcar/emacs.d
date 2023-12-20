@@ -353,6 +353,9 @@ We also set ~custom-file~ to be within one of these new nice directories, so Ema
     'which-key-local-map-description-face nil :weight 'bold))
 #+end_src
 
+** Restart-emacs
+[[https://github.com/iqbalansari/restart-emacs][restart-emacs]] adds just two functions `restart-emacs` to restart the running instance and `restart-emacs-start-new-emacs`to start a new instance.
+
 ** Evil
 [[https://github.com/emacs-evil/evil][EVIL]] is vim emulation in Emacs. There are a number of other evil packages which add vim-like bindings to various modes.
 
